@@ -21,10 +21,59 @@ body {
   min-height: 100vh;
   font-family: "Chakra Petch", sans-serif;
   color: var(--ink);
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(
+    130deg,
+    #ff5f6d,
+    #ffc371,
+    #f9f871,
+    #5cf2c7,
+    #5da9ff,
+    #bb7dff,
+    #ff5f6d
+  );
+  background-size: 300% 300%;
+  animation: rainbow-shift 18s linear infinite;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background:
-    radial-gradient(circle at 8% 10%, #4f6478 0, transparent 32%),
-    radial-gradient(circle at 90% 85%, #3c5366 0, transparent 34%),
-    linear-gradient(165deg, var(--bg-0), var(--bg-1));
+    radial-gradient(circle at 14% 12%, rgb(255 255 255 / 0.65), transparent 30%),
+    radial-gradient(circle at 82% 22%, rgb(255 255 255 / 0.48), transparent 26%),
+    linear-gradient(120deg, transparent 18%, rgb(255 255 255 / 0.4) 45%, transparent 72%);
+  background-size: auto, auto, 230% 230%;
+  mix-blend-mode: screen;
+  animation: shine-sweep 7s ease-in-out infinite;
+}
+
+@keyframes rainbow-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes shine-sweep {
+  0%,
+  100% {
+    background-position: center, center, 0% 0%;
+    opacity: 0.8;
+  }
+  50% {
+    background-position: center, center, 100% 100%;
+    opacity: 1;
+  }
 }
 
 .shell {
