@@ -227,3 +227,60 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+
+.start-menu.celebration {
+  background: radial-gradient(circle at top, rgb(34 26 58 / 0.95), rgb(8 9 24 / 0.95));
+}
+
+.fireworks {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.fireworks::before,
+.fireworks::after {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgb(255 235 144 / 1) 0 3px, transparent 4px),
+    radial-gradient(circle, rgb(255 117 117 / 1) 0 3px, transparent 4px),
+    radial-gradient(circle, rgb(138 217 255 / 1) 0 3px, transparent 4px),
+    radial-gradient(circle, rgb(189 149 255 / 1) 0 3px, transparent 4px);
+  background-size: 100% 100%;
+  opacity: 0;
+  animation: firework-burst 1.8s ease-out infinite;
+}
+
+.fireworks::before {
+  left: 12%;
+  top: 18%;
+}
+
+.fireworks::after {
+  right: 10%;
+  bottom: 20%;
+  animation-delay: 0.8s;
+}
+
+.fireworks.hidden {
+  display: none;
+}
+
+@keyframes firework-burst {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}

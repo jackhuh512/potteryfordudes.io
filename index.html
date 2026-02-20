@@ -29,8 +29,9 @@
           <canvas id="gameMap" width="640" height="448" aria-label="Game Map"></canvas>
           <div id="startMenu" class="start-menu">
             <p class="menu-label">potteryfordudes.io</p>
-            <h2>ClayTown Start Menu</h2>
-            <p>Isaac is ready to sell pots to dudes. Start a fresh run on this map.</p>
+            <h2 id="menuTitle">ClayTown Start Menu</h2>
+            <p id="menuCopy">Isaac is ready to sell pots to dudes. Start a fresh run on this map.</p>
+            <div id="fireworks" class="fireworks hidden" aria-hidden="true"></div>
             <button id="newGameBtn" type="button">New Game</button>
           </div>
         </div>
@@ -39,6 +40,7 @@
           <h2>Isaac's Cart</h2>
           <p id="inventory">Pottery left: 10</p>
           <p id="sales">Sales made: 0 / 4</p>
+          <p id="level">Level: 1 / 5</p>
           <p id="boatStatus">Boat: Unequipped</p>
           <p id="message">Walk up to a dude and press E to sell pottery.</p>
 
