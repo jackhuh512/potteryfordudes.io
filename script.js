@@ -30,6 +30,7 @@ let musicTimerId = null;
 let bgmSetTimerId = null;
 let musicStepIndex = 0;
 let bgmSetIndex = 0;
+let awaitingReplay = false;
 
 const bgmSetDurationMs = 120000;
 let map = [];
@@ -631,6 +632,7 @@ function completeLevel() {
   }
 
   if (currentLevel >= maxLevel) {
+    awaitingReplay = true;
     openMenu({
       title: "Legend Complete!",
       copy: "You cleared all 5 levels. ClayTown is celebrating with fireworks!",
@@ -641,6 +643,7 @@ function completeLevel() {
   }
 
   currentLevel += 1;
+  awaitingReplay = false;
   loadLevel(currentLevel);
   openMenu({
     title: `Level ${currentLevel} Unlocked`,
@@ -679,8 +682,6 @@ function trySell() {
     gameRunning = false;
     stopMusicLoop();
     stopBgmSetRotation();
-    newGameBtn.textContent = "Play Again";
-    startMenuEl.classList.remove("hidden");
     if (animationFrameId) {
       cancelAnimationFrame(animationFrameId);
       animationFrameId = null;
@@ -704,8 +705,9 @@ function gameLoop() {
 }
 
 function startNewGame() {
-  if (currentLevel > maxLevel) {
+  if (awaitingReplay || currentLevel > maxLevel) {
     currentLevel = 1;
+    awaitingReplay = false;
   }
 
   loadLevel(currentLevel);
@@ -747,9 +749,6 @@ window.addEventListener("keyup", (event) => {
 });
 
 newGameBtn.addEventListener("click", () => {
-  if (newGameBtn.textContent === "Play Again") {
-    currentLevel = 1;
-  }
   startNewGame();
 });
 
