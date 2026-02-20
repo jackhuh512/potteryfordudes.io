@@ -1,0 +1,180 @@
+:root {
+  --bg-0: #121a22;
+  --bg-1: #2a3b4f;
+  --panel: #f4e8d9;
+  --panel-strong: #e5d2ba;
+  --ink: #1f1d1a;
+  --accent: #d16b34;
+  --accent-dark: #8e3f20;
+  --grass: #7fa95e;
+  --water: #5a9ab5;
+  --wall: #7b5a43;
+  --line: #2f2a25;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Chakra Petch", sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 8% 10%, #4f6478 0, transparent 32%),
+    radial-gradient(circle at 90% 85%, #3c5366 0, transparent 34%),
+    linear-gradient(165deg, var(--bg-0), var(--bg-1));
+}
+
+.shell {
+  width: min(1100px, 92vw);
+  margin: 2rem auto;
+  display: grid;
+  gap: 1rem;
+}
+
+.card {
+  border: 3px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: 8px 8px 0 rgb(0 0 0 / 0.22);
+}
+
+.intro {
+  padding: 1rem 1.2rem;
+}
+
+.label {
+  margin: 0;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--accent-dark);
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Black Ops One", system-ui;
+  letter-spacing: 0.02em;
+}
+
+h1 {
+  margin: 0.2rem 0 0.5rem;
+  font-size: clamp(2rem, 5.2vw, 3.6rem);
+  line-height: 1;
+}
+
+.intro p {
+  margin: 0.4rem 0;
+  font-size: 1.05rem;
+}
+
+.game-area {
+  display: grid;
+  grid-template-columns: 1fr 290px;
+  gap: 1rem;
+}
+
+.map-frame {
+  position: relative;
+  background: #151515;
+  overflow: hidden;
+}
+
+#gameMap {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}
+
+.start-menu {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.6rem;
+  padding: 1.2rem;
+  text-align: center;
+  background: rgb(18 26 34 / 0.9);
+  color: #f8efe3;
+}
+
+.start-menu h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+}
+
+.start-menu p {
+  margin: 0;
+}
+
+.menu-label {
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #ffb88d;
+}
+
+#newGameBtn {
+  justify-self: center;
+  margin-top: 0.5rem;
+  border: 2px solid #201b17;
+  border-radius: 999px;
+  padding: 0.6rem 1.2rem;
+  font: inherit;
+  font-weight: 700;
+  color: #201b17;
+  background: linear-gradient(180deg, #ffcaa7, #e89f70);
+  cursor: pointer;
+}
+
+#newGameBtn:hover {
+  filter: brightness(1.05);
+}
+
+.start-menu.hidden {
+  display: none;
+}
+
+.hud {
+  padding: 1rem;
+  background: linear-gradient(180deg, var(--panel), var(--panel-strong));
+}
+
+.hud h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.25rem;
+}
+
+.hud p {
+  margin: 0.45rem 0;
+}
+
+#message {
+  margin-top: 0.75rem;
+  min-height: 3.2rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+  background: #fff9ef;
+}
+
+.controls {
+  margin-top: 0.9rem;
+  border-top: 2px dashed var(--accent-dark);
+  padding-top: 0.65rem;
+}
+
+.controls h3 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+}
+
+@media (max-width: 930px) {
+  .game-area {
+    grid-template-columns: 1fr;
+  }
+}
