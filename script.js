@@ -504,11 +504,11 @@ function walkable(x, y) {
     return false;
   }
 
-  if (tile === "water" && !boatEquipped) {
-    return false;
+  if (boatEquipped) {
+    return tile === "water";
   }
 
-  return true;
+  return tile !== "water";
 }
 
 function toggleBoat() {
@@ -517,21 +517,49 @@ function toggleBoat() {
     return;
   }
 
-  if (boatEquipped) {
-    if (map[player.y][player.x] === "water") {
-      updateHud("Cannot unequip boat while standing on water.");
+  const targetX = player.x + player.facing.x;
+  const targetY = player.y + player.facing.y;
+
+  if (
+    targetX < 0 ||
+    targetY < 0 ||
+    targetX >= mapWidth ||
+    targetY >= mapHeight
+  ) {
+    updateHud("No tile in front of Isaac for boat transition.");
+    return;
+  }
+
+  const targetTile = map[targetY][targetX];
+  if (targetTile === "wall") {
+    updateHud("A wall blocks boat transition.");
+    return;
+  }
+
+  if (!boatEquipped) {
+    if (targetTile !== "water") {
+      updateHud("Face water and press B to board the boat.");
       return;
     }
-    boatEquipped = false;
-    updateHud("Boat unequipped.");
+    boatEquipped = true;
+    player.x = targetX;
+    player.y = targetY;
+    updateHud("Isaac boarded the boat and moved onto water.");
     if (gameRunning) {
       startMusicLoop();
     }
     return;
   }
 
-  boatEquipped = true;
-  updateHud("Boat equipped. Isaac can now move across water.");
+  if (targetTile === "water") {
+    updateHud("Face land and press B to dock and unequip the boat.");
+    return;
+  }
+
+  boatEquipped = false;
+  player.x = targetX;
+  player.y = targetY;
+  updateHud("Isaac docked on land and unequipped the boat.");
   if (gameRunning) {
     startMusicLoop();
   }
