@@ -11,6 +11,8 @@ const menuTitleEl = document.getElementById("menuTitle");
 const menuCopyEl = document.getElementById("menuCopy");
 const newGameBtn = document.getElementById("newGameBtn");
 const fireworksEl = document.getElementById("fireworks");
+const toggleMusicBtn = document.getElementById("toggleMusicBtn");
+const nextBgmBtn = document.getElementById("nextBgmBtn");
 
 const tileSize = 32;
 const mapWidth = canvas.width / tileSize;
@@ -30,6 +32,7 @@ let musicTimerId = null;
 let bgmSetTimerId = null;
 let musicStepIndex = 0;
 let bgmSetIndex = 0;
+let musicEnabled = true;
 
 const bgmSetDurationMs = 120000;
 let map = [];
@@ -322,6 +325,15 @@ function openMenu({ title, copy, buttonText, celebration = false }) {
   startMenuEl.classList.remove("hidden");
 }
 
+
+function updateMusicButtons() {
+  if (!toggleMusicBtn || !nextBgmBtn) {
+    return;
+  }
+
+  toggleMusicBtn.textContent = `Music: ${musicEnabled ? "On" : "Off"}`;
+}
+
 function ensureAudioContext() {
   if (!audioContext) {
     audioContext = new window.AudioContext();
@@ -387,14 +399,17 @@ function stopBgmSetRotation() {
 function advanceBgmSet() {
   bgmSetIndex = (bgmSetIndex + 1) % musicProfile.sets.length;
   musicStepIndex = 0;
-  if (gameRunning) {
+  if (gameRunning && musicEnabled) {
     startMusicLoop();
-    updateHud(`Now playing soundtrack vibe: ${currentMusicSet().vibe}.`);
   }
+  updateHud(`Now playing soundtrack vibe: ${currentMusicSet().vibe}.`);
 }
 
 function startBgmSetRotation() {
   stopBgmSetRotation();
+  if (!musicEnabled) {
+    return;
+  }
   bgmSetTimerId = setInterval(advanceBgmSet, bgmSetDurationMs);
 }
 
@@ -427,7 +442,7 @@ function scheduleMusicStep() {
 }
 
 function startMusicLoop() {
-  if (!gameRunning) {
+  if (!gameRunning || !musicEnabled) {
     return;
   }
 
@@ -436,7 +451,29 @@ function startMusicLoop() {
   scheduleMusicStep();
 }
 
+function toggleMusicEnabled() {
+  musicEnabled = !musicEnabled;
+  updateMusicButtons();
+
+  if (!musicEnabled) {
+    stopMusicLoop();
+    stopBgmSetRotation();
+    updateHud("Music muted. Press M or the button to turn it back on.");
+    return;
+  }
+
+  if (gameRunning) {
+    startBgmSetRotation();
+    startMusicLoop();
+  }
+  updateHud(`Music enabled. Current soundtrack vibe: ${currentMusicSet().vibe}.`);
+}
+
 function playSaleChaching() {
+  if (!musicEnabled) {
+    return;
+  }
+
   ensureAudioContext();
   const [n1, n2, n3] = musicProfile.sfx.sale;
   playSynthNote({ frequency: n1, duration: 0.08, type: "square", volume: 0.09 });
@@ -641,6 +678,8 @@ function completeLevel() {
   }
 
   currentLevel += 1;
+  updateMusicButtons();
+
   loadLevel(currentLevel);
   openMenu({
     title: `Level ${currentLevel} Unlocked`,
@@ -708,6 +747,8 @@ function startNewGame() {
     currentLevel = 1;
   }
 
+  updateMusicButtons();
+
   loadLevel(currentLevel);
   startMenuEl.classList.add("hidden");
   if (!gameRunning) {
@@ -720,6 +761,17 @@ function startNewGame() {
 
 window.addEventListener("keydown", (event) => {
   const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+
+  if (key === "m" && !event.repeat) {
+    event.preventDefault();
+    toggleMusicEnabled();
+  }
+
+  if (key === "n" && !event.repeat) {
+    event.preventDefault();
+    advanceBgmSet();
+  }
+
   if (!gameRunning) {
     if (key === "Enter") {
       event.preventDefault();
@@ -739,11 +791,20 @@ window.addEventListener("keydown", (event) => {
     event.preventDefault();
     toggleBoat();
   }
+
 });
 
 window.addEventListener("keyup", (event) => {
   const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
   keys.delete(key);
+});
+
+toggleMusicBtn.addEventListener("click", () => {
+  toggleMusicEnabled();
+});
+
+nextBgmBtn.addEventListener("click", () => {
+  advanceBgmSet();
 });
 
 newGameBtn.addEventListener("click", () => {
@@ -752,6 +813,8 @@ newGameBtn.addEventListener("click", () => {
   }
   startNewGame();
 });
+
+updateMusicButtons();
 
 loadLevel(currentLevel);
 openMenu({
