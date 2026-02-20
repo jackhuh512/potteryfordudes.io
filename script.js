@@ -603,9 +603,20 @@ function move(dx, dy) {
   if (walkable(nx, ny)) {
     player.x = nx;
     player.y = ny;
-  } else if (boatEquipped && nx >= 0 && ny >= 0 && nx < mapWidth && ny < mapHeight) {
-    if (map[ny][nx] !== "water" && map[ny][nx] !== "wall") {
-      updateHud("Boat is equipped. Press B while facing land to dock.");
+  } else if (nx >= 0 && ny >= 0 && nx < mapWidth && ny < mapHeight) {
+    const destinationTile = map[ny][nx];
+    if (!boatEquipped && destinationTile === "water") {
+      updateHud(
+        "Uh-oh! The water is too deep. Equip you boat or you will be fish food!"
+      );
+    } else if (
+      boatEquipped &&
+      destinationTile !== "water" &&
+      destinationTile !== "wall"
+    ) {
+      updateHud(
+        "Uh-oh! The boat can't move onto land. Press B to dock before stepping ashore."
+      );
     }
   }
 }
