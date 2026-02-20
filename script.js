@@ -21,18 +21,118 @@ let gameRunning = false;
 let animationFrameId = null;
 let audioContext = null;
 let musicTimerId = null;
+let bgmSetTimerId = null;
 let musicStepIndex = 0;
+let bgmSetIndex = 0;
+
+const bgmSetDurationMs = 120000;
 
 const keys = new Set();
 const musicProfile = {
-  normal: {
-    bpm: 92,
-    steps: [220, 277.18, 329.63, 277.18, 246.94, 293.66, 349.23, 293.66],
-  },
-  boat: {
-    bpm: 132,
-    steps: [329.63, 392, 440, 392, 349.23, 415.3, 493.88, 415.3],
-  },
+  sets: [
+    {
+      vibe: "Happy, Jovial",
+      normal: {
+        bpm: 108,
+        steps: [261.63, 329.63, 392, 440, 392, 329.63, 349.23, 392],
+        leadType: "triangle",
+        bassType: "sine",
+        leadVolume: 0.05,
+      },
+      boat: {
+        bpm: 124,
+        steps: [329.63, 392, 440, 493.88, 440, 392, 369.99, 392],
+        leadType: "square",
+        bassType: "triangle",
+        leadVolume: 0.055,
+      },
+    },
+    {
+      vibe: "Moody, Blues",
+      normal: {
+        bpm: 76,
+        steps: [196, 233.08, 261.63, 293.66, 261.63, 233.08, 220, 196],
+        leadType: "sawtooth",
+        bassType: "sine",
+        leadVolume: 0.048,
+      },
+      boat: {
+        bpm: 88,
+        steps: [220, 261.63, 293.66, 329.63, 293.66, 261.63, 246.94, 220],
+        leadType: "square",
+        bassType: "triangle",
+        leadVolume: 0.052,
+      },
+    },
+    {
+      vibe: "R&B, Romantic",
+      normal: {
+        bpm: 82,
+        steps: [220, 277.18, 311.13, 369.99, 329.63, 311.13, 277.18, 246.94],
+        leadType: "triangle",
+        bassType: "sine",
+        leadVolume: 0.046,
+      },
+      boat: {
+        bpm: 96,
+        steps: [246.94, 311.13, 349.23, 392, 349.23, 311.13, 293.66, 261.63],
+        leadType: "square",
+        bassType: "triangle",
+        leadVolume: 0.05,
+      },
+    },
+    {
+      vibe: "Vibes, Lofi",
+      normal: {
+        bpm: 72,
+        steps: [174.61, 220, 261.63, 220, 196, 233.08, 261.63, 233.08],
+        leadType: "triangle",
+        bassType: "sine",
+        leadVolume: 0.042,
+      },
+      boat: {
+        bpm: 84,
+        steps: [196, 246.94, 293.66, 246.94, 220, 261.63, 311.13, 261.63],
+        leadType: "square",
+        bassType: "triangle",
+        leadVolume: 0.047,
+      },
+    },
+    {
+      vibe: "Hip-hop, Groovy",
+      normal: {
+        bpm: 98,
+        steps: [185, 220, 261.63, 293.66, 261.63, 220, 196, 220],
+        leadType: "square",
+        bassType: "sine",
+        leadVolume: 0.053,
+      },
+      boat: {
+        bpm: 112,
+        steps: [207.65, 246.94, 293.66, 329.63, 293.66, 246.94, 220, 246.94],
+        leadType: "square",
+        bassType: "triangle",
+        leadVolume: 0.058,
+      },
+    },
+    {
+      vibe: "Scary, Spooky",
+      normal: {
+        bpm: 66,
+        steps: [146.83, 174.61, 196, 233.08, 174.61, 196, 164.81, 146.83],
+        leadType: "sawtooth",
+        bassType: "sine",
+        leadVolume: 0.044,
+      },
+      boat: {
+        bpm: 80,
+        steps: [164.81, 196, 220, 261.63, 196, 220, 185, 164.81],
+        leadType: "square",
+        bassType: "triangle",
+        leadVolume: 0.049,
+      },
+    },
+  ],
   sfx: {
     sale: [880, 1174.66, 1567.98],
   },
@@ -92,8 +192,15 @@ function resetGameState() {
   player.facing = { x: 0, y: 1 };
   dudes = dudeBlueprints.map((dude) => ({ ...dude }));
   musicStepIndex = 0;
+  bgmSetIndex = 0;
   keys.clear();
-  updateHud("Walk up to a dude and press E to sell pottery.");
+  stopMusicLoop();
+  stopBgmSetRotation();
+  updateHud(
+    `Walk up to a dude and press E to sell pottery. Current soundtrack: ${
+      currentMusicSet().vibe
+    }.`
+  );
   render();
 }
 
@@ -136,8 +243,13 @@ function playSynthNote({
   osc.stop(endTime + 0.01);
 }
 
+function currentMusicSet() {
+  return musicProfile.sets[bgmSetIndex % musicProfile.sets.length];
+}
+
 function currentTrack() {
-  return boatEquipped ? musicProfile.boat : musicProfile.normal;
+  const set = currentMusicSet();
+  return boatEquipped ? set.boat : set.normal;
 }
 
 function stopMusicLoop() {
@@ -145,6 +257,27 @@ function stopMusicLoop() {
     clearTimeout(musicTimerId);
     musicTimerId = null;
   }
+}
+
+function stopBgmSetRotation() {
+  if (bgmSetTimerId) {
+    clearInterval(bgmSetTimerId);
+    bgmSetTimerId = null;
+  }
+}
+
+function advanceBgmSet() {
+  bgmSetIndex = (bgmSetIndex + 1) % musicProfile.sets.length;
+  musicStepIndex = 0;
+  if (gameRunning) {
+    startMusicLoop();
+    updateHud(`Now playing soundtrack vibe: ${currentMusicSet().vibe}.`);
+  }
+}
+
+function startBgmSetRotation() {
+  stopBgmSetRotation();
+  bgmSetTimerId = setInterval(advanceBgmSet, bgmSetDurationMs);
 }
 
 function scheduleMusicStep() {
@@ -159,15 +292,15 @@ function scheduleMusicStep() {
   playSynthNote({
     frequency: stepFrequency,
     duration: beatSeconds * 0.72,
-    type: boatEquipped ? "square" : "triangle",
-    volume: boatEquipped ? 0.05 : 0.04,
+    type: track.leadType || (boatEquipped ? "square" : "triangle"),
+    volume: track.leadVolume || (boatEquipped ? 0.05 : 0.04),
   });
 
   playSynthNote({
     frequency: stepFrequency / 2,
     duration: beatSeconds * 0.5,
     when: 0.02,
-    type: "sine",
+    type: track.bassType || "sine",
     volume: 0.03,
   });
 
@@ -400,6 +533,7 @@ function trySell() {
     updateHud(`${target.name} bought a pot. Goal complete for this map!`);
     gameRunning = false;
     stopMusicLoop();
+    stopBgmSetRotation();
     newGameBtn.textContent = "Play Again";
     startMenuEl.classList.remove("hidden");
     if (animationFrameId) {
@@ -428,6 +562,7 @@ function startNewGame() {
   newGameBtn.textContent = "New Game";
   if (!gameRunning) {
     gameRunning = true;
+    startBgmSetRotation();
     startMusicLoop();
     gameLoop();
   }
