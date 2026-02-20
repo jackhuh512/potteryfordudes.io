@@ -505,6 +505,9 @@ function walkable(x, y) {
   }
 
   if (boatEquipped) {
+    if (map[player.y][player.x] !== "water") {
+      return false;
+    }
     return tile === "water";
   }
 
@@ -517,6 +520,7 @@ function toggleBoat() {
     return;
   }
 
+  const currentTile = map[player.y][player.x];
   const targetX = player.x + player.facing.x;
   const targetY = player.y + player.facing.y;
 
@@ -536,7 +540,25 @@ function toggleBoat() {
     return;
   }
 
+  if (boatEquipped && currentTile !== "water") {
+    boatEquipped = false;
+    updateHud("Boat unequipped because Isaac is on land.");
+    if (gameRunning) {
+      startMusicLoop();
+    }
+    return;
+  }
+
   if (!boatEquipped) {
+    if (currentTile === "water") {
+      boatEquipped = true;
+      updateHud("Boat equipped while Isaac is on water.");
+      if (gameRunning) {
+        startMusicLoop();
+      }
+      return;
+    }
+
     if (targetTile !== "water") {
       updateHud("Face water and press B to board the boat.");
       return;
@@ -570,9 +592,21 @@ function move(dx, dy) {
   const nx = player.x + dx;
   const ny = player.y + dy;
 
+  if (boatEquipped && map[player.y][player.x] !== "water") {
+    boatEquipped = false;
+    updateHud("Boat unequipped because Isaac stepped onto land.");
+    if (gameRunning) {
+      startMusicLoop();
+    }
+  }
+
   if (walkable(nx, ny)) {
     player.x = nx;
     player.y = ny;
+  } else if (boatEquipped && nx >= 0 && ny >= 0 && nx < mapWidth && ny < mapHeight) {
+    if (map[ny][nx] !== "water" && map[ny][nx] !== "wall") {
+      updateHud("Boat is equipped. Press B while facing land to dock.");
+    }
   }
 }
 
