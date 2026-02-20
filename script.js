@@ -290,7 +290,7 @@ function applyWaterRects(baseMap, waterRects) {
 
 function loadLevel(level) {
   const config = levelConfigs[level];
-  goal = config.goal;
+  goal = config.dudes.length;
   pottery = goal + 5;
   sales = 0;
   boatEquipped = false;
