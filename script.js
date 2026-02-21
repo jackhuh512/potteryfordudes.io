@@ -757,6 +757,9 @@ function drawPlayer() {
     return;
   }
 
+  const facingX = player.facing.x;
+  const facingY = player.facing.y;
+
   if (boatEquipped) {
     ctx.fillStyle = "#6d4128";
     ctx.fillRect(px + 2, py + 18, 28, 10);
@@ -769,6 +772,13 @@ function drawPlayer() {
     ctx.fillRect(px + 10, py + 6, 12, 9);
     ctx.fillStyle = "#2f4f90";
     ctx.fillRect(px + 8, py + 15, 16, 8);
+
+    // Eyes in boat mode still reflect facing direction.
+    const eyeOffsetX = facingX === 0 ? 0 : facingX * 2;
+    const eyeOffsetY = facingY === 0 ? 0 : facingY * 2;
+    ctx.fillStyle = "#1f1f1f";
+    ctx.fillRect(px + 13 + eyeOffsetX, py + 9 + eyeOffsetY, 2, 2);
+    ctx.fillRect(px + 17 + eyeOffsetX, py + 9 + eyeOffsetY, 2, 2);
     return;
   }
 
@@ -778,9 +788,20 @@ function drawPlayer() {
   ctx.fillStyle = "#2f4f90";
   ctx.fillRect(px + 6, py + 14, 20, 13);
 
+  // Eyes are nudged toward the current facing direction.
+  const eyeOffsetX = facingX === 0 ? 0 : facingX * 2;
+  const eyeOffsetY = facingY === 0 ? 0 : facingY * 2;
+  ctx.fillStyle = "#1f1f1f";
+  ctx.fillRect(px + 12 + eyeOffsetX, py + 8 + eyeOffsetY, 2, 2);
+  ctx.fillRect(px + 18 + eyeOffsetX, py + 8 + eyeOffsetY, 2, 2);
+
+  // Pot is always held toward the facing direction.
+  const potBaseX = px + 14 + facingX * 8;
+  const potBaseY = py + 18 + facingY * 8;
   ctx.fillStyle = "#d16b34";
-  ctx.fillRect(px + 2, py + 17, 4, 8);
+  ctx.fillRect(potBaseX, potBaseY, 4, 8);
 }
+
 
 function drawDude(dude) {
   const px = dude.x * tileSize;
