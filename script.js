@@ -14,10 +14,8 @@ const fireworksEl = document.getElementById("fireworks");
 const toggleMusicBtn = document.getElementById("toggleMusicBtn");
 const nextBgmBtn = document.getElementById("nextBgmBtn");
 const difficultySelectEl = document.getElementById("difficultySelect");
-<<<<<<< codex/add-irs-enemy-with-game-over-mechanic-vlvlp2
 const difficultyPanelEl = document.getElementById("difficultyPanel");
-=======
->>>>>>> main
+const difficultyPanelEl = document.getElementById("difficultyPanel");
 
 const tileSize = 32;
 const mapWidth = canvas.width / tileSize;
@@ -948,10 +946,7 @@ function resolveGameOver() {
     title: "Game Over",
     copy: "The IRS shut Isaac down. Start over from Level 1.",
     buttonText: "Restart Run",
-<<<<<<< codex/add-irs-enemy-with-game-over-mechanic-vlvlp2
     showDifficulty: false,
-=======
->>>>>>> main
   });
 }
 
@@ -1089,6 +1084,13 @@ function startNewGame() {
   }
 
   updateMusicButtons();
+
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  stopMusicLoop();
+  stopBgmSetRotation();
 
   loadLevel(currentLevel);
   hasStartedGame = true;
