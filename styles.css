@@ -188,6 +188,28 @@ h1 {
   display: none;
 }
 
+.difficulty-label {
+  margin-top: 0.4rem;
+  font-weight: 700;
+}
+
+#difficultySelect {
+  justify-self: center;
+  width: min(220px, 100%);
+  border: 2px solid #201b17;
+  border-radius: 10px;
+  padding: 0.4rem 0.55rem;
+  font: inherit;
+  font-weight: 700;
+  color: #201b17;
+  background: #fff4e9;
+}
+
+
+#difficultyPanel.hidden {
+  display: none;
+}
+
 .hud {
   padding: 1rem;
   background: linear-gradient(180deg, var(--panel), var(--panel-strong));
