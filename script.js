@@ -42,6 +42,8 @@ let audioContext = null;
 let musicTimerId = null;
 let bgmSetTimerId = null;
 let gameOverMusicTimerIds = [];
+let celebrationMusicTimerIds = [];
+let celebrationMusicLoopTimerId = null;
 let musicStepIndex = 0;
 let bgmSetIndex = 0;
 let awaitingReplay = false;
@@ -538,6 +540,19 @@ function stopGameOverMusic() {
 }
 
 /**
+ * Cancels any queued celebration anthem notes/percussion.
+ */
+function stopCelebrationMusic() {
+  celebrationMusicTimerIds.forEach((timerId) => clearTimeout(timerId));
+  celebrationMusicTimerIds = [];
+
+  if (celebrationMusicLoopTimerId) {
+    clearTimeout(celebrationMusicLoopTimerId);
+    celebrationMusicLoopTimerId = null;
+  }
+}
+
+/**
  * Moves to the next BGM set and restarts playback so change is immediate.
  */
 function advanceBgmSet() {
@@ -640,6 +655,131 @@ function playGameOverViolin() {
 }
 
 /**
+ * Plays one punchy synth drum hit used by the celebration anthem groove.
+ */
+function playDrumHit({ when = 0, kick = false }) {
+  if (!audioContext) {
+    return;
+  }
+
+  const startTime = audioContext.currentTime + when;
+
+  if (kick) {
+    const kickOsc = audioContext.createOscillator();
+    const kickGain = audioContext.createGain();
+
+    kickOsc.type = "sine";
+    kickOsc.frequency.setValueAtTime(160, startTime);
+    kickOsc.frequency.exponentialRampToValueAtTime(48, startTime + 0.16);
+
+    kickGain.gain.setValueAtTime(0.0001, startTime);
+    kickGain.gain.exponentialRampToValueAtTime(0.22, startTime + 0.01);
+    kickGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.2);
+
+    kickOsc.connect(kickGain);
+    kickGain.connect(audioContext.destination);
+    kickOsc.start(startTime);
+    kickOsc.stop(startTime + 0.22);
+  }
+
+  const noiseBuffer = audioContext.createBuffer(
+    1,
+    Math.floor(audioContext.sampleRate * 0.14),
+    audioContext.sampleRate,
+  );
+  const channelData = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < channelData.length; i += 1) {
+    channelData[i] = (Math.random() * 2 - 1) * (1 - i / channelData.length);
+  }
+
+  const noiseSource = audioContext.createBufferSource();
+  const noiseFilter = audioContext.createBiquadFilter();
+  const noiseGain = audioContext.createGain();
+
+  noiseSource.buffer = noiseBuffer;
+  noiseFilter.type = "bandpass";
+  noiseFilter.frequency.setValueAtTime(kick ? 900 : 1800, startTime);
+  noiseGain.gain.setValueAtTime(0.0001, startTime);
+  noiseGain.gain.exponentialRampToValueAtTime(kick ? 0.08 : 0.05, startTime + 0.006);
+  noiseGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.12);
+
+  noiseSource.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(audioContext.destination);
+  noiseSource.start(startTime);
+  noiseSource.stop(startTime + 0.13);
+}
+
+/**
+ * Plays a looping trumpet-and-drum victory anthem on final completion.
+ */
+function playCelebrationAnthem() {
+  if (!musicEnabled) {
+    return;
+  }
+
+  ensureAudioContext();
+  stopCelebrationMusic();
+
+  const bpm = 126;
+  const beatSeconds = 60 / bpm;
+  const anthemPhrase = [
+    { freq: 523.25, beats: 1 },
+    { freq: 659.25, beats: 1 },
+    { freq: 783.99, beats: 1 },
+    { freq: 880, beats: 1 },
+    { freq: 783.99, beats: 0.5 },
+    { freq: 698.46, beats: 0.5 },
+    { freq: 659.25, beats: 1 },
+    { freq: 523.25, beats: 2 },
+  ];
+
+  let offsetSeconds = 0;
+  anthemPhrase.forEach((step, index) => {
+    const timerId = setTimeout(() => {
+      playSynthNote({
+        frequency: step.freq,
+        duration: beatSeconds * step.beats * 0.9,
+        type: "sawtooth",
+        volume: 0.08,
+      });
+      playSynthNote({
+        frequency: step.freq * 1.5,
+        duration: beatSeconds * step.beats * 0.65,
+        when: 0.01,
+        type: "square",
+        volume: 0.045,
+      });
+      playSynthNote({
+        frequency: step.freq / 2,
+        duration: beatSeconds * step.beats,
+        when: 0.02,
+        type: "triangle",
+        volume: 0.03,
+      });
+
+      if (index === anthemPhrase.length - 1) {
+        celebrationMusicTimerIds = [];
+      }
+    }, offsetSeconds * 1000);
+
+    celebrationMusicTimerIds.push(timerId);
+    offsetSeconds += step.beats * beatSeconds;
+  });
+
+  const drumPatternBeats = [0, 0.75, 1.5, 2, 2.75, 3.5, 4.5, 5.25, 6, 6.75];
+  drumPatternBeats.forEach((beat, index) => {
+    const timerId = setTimeout(() => {
+      playDrumHit({ when: 0, kick: index % 2 === 0 });
+    }, beat * beatSeconds * 1000);
+    celebrationMusicTimerIds.push(timerId);
+  });
+
+  const loopLengthMs = offsetSeconds * 1000;
+  celebrationMusicLoopTimerId = setTimeout(playCelebrationAnthem, loopLengthMs);
+}
+
+/**
  * Starts looping BGM playback and set rotation when music is enabled.
  */
 function startMusicLoop() {
@@ -662,11 +802,14 @@ function toggleMusicEnabled() {
   if (!musicEnabled) {
     stopMusicLoop();
     stopBgmSetRotation();
+    stopCelebrationMusic();
     updateHud("Music muted. Press M or the button to turn it back on.");
     return;
   }
 
-  if (gameRunning) {
+  if (awaitingReplay) {
+    playCelebrationAnthem();
+  } else if (gameRunning) {
     startBgmSetRotation();
     startMusicLoop();
   }
@@ -1102,6 +1245,7 @@ function resolveGameOver() {
   stopMusicLoop();
   stopBgmSetRotation();
   stopGameOverMusic();
+  stopCelebrationMusic();
   if (animationFrameId) {
     cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
@@ -1158,9 +1302,10 @@ function completeLevel() {
 
   if (currentLevel >= maxLevel) {
     awaitingReplay = true;
+    playCelebrationAnthem();
     openMenu({
       title: "Legend Complete!",
-      copy: "You cleared all 5 levels. ClayTown is celebrating with fireworks!",
+      copy: "You cleared all 5 levels! Trumpets blast, drums thunder, and fireworks paint all of ClayTown.",
       buttonText: "Play Again",
       celebration: true,
       showDifficulty: false,
@@ -1277,6 +1422,7 @@ function startNewGame() {
   stopMusicLoop();
   stopBgmSetRotation();
   stopGameOverMusic();
+  stopCelebrationMusic();
 
   loadLevel(currentLevel);
   hasStartedGame = true;
