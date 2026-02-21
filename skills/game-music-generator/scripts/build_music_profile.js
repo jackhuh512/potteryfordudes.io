@@ -1,8 +1,15 @@
 #!/usr/bin/env node
 
+/**
+ * Utility script that writes a sample music-profile.json file for the skill.
+ * Run it when you want to regenerate the reference JSON from this JS object.
+ */
+
+// Node built-ins for filesystem output and path-safe file targeting.
 const fs = require("fs");
 const path = require("path");
 
+// Source data model that will be serialized to JSON.
 const profile = {
   normal: {
     bpm: 92,
@@ -17,6 +24,7 @@ const profile = {
   },
 };
 
+// Resolve output path relative to this script file for portability.
 const outputPath = path.resolve(
   __dirname,
   "..",
@@ -24,5 +32,6 @@ const outputPath = path.resolve(
   "music-profile.json"
 );
 
+// Write pretty-printed JSON so humans can read/edit it easily.
 fs.writeFileSync(outputPath, JSON.stringify(profile, null, 2));
 console.log(`Wrote ${outputPath}`);

@@ -1,3 +1,7 @@
+/*
+ * Global design tokens used throughout the UI.
+ * Keeping palette values centralized makes theme tweaks easy.
+ */
 :root {
   --bg-0: #121a22;
   --bg-1: #2a3b4f;
@@ -12,10 +16,12 @@
   --line: #2f2a25;
 }
 
+/* Normalize box model for predictable element sizing. */
 * {
   box-sizing: border-box;
 }
 
+/* Animated rainbow page background + base typography setup. */
 body {
   margin: 0;
   min-height: 100vh;
@@ -37,6 +43,7 @@ body {
   animation: rainbow-shift 18s linear infinite;
 }
 
+/* Glossy animated overlay pass above the rainbow gradient. */
 body::before {
   content: "";
   position: fixed;
@@ -52,6 +59,7 @@ body::before {
   animation: shine-sweep 7s ease-in-out infinite;
 }
 
+/* Background animation that slowly cycles gradient positions. */
 @keyframes rainbow-shift {
   0% {
     background-position: 0% 50%;
@@ -64,6 +72,7 @@ body::before {
   }
 }
 
+/* Secondary animation that sweeps a soft highlight across the page. */
 @keyframes shine-sweep {
   0%,
   100% {
@@ -76,6 +85,7 @@ body::before {
   }
 }
 
+/* Main responsive page grid. */
 .shell {
   width: min(1100px, 92vw);
   margin: 2rem auto;
@@ -83,6 +93,7 @@ body::before {
   gap: 1rem;
 }
 
+/* Reusable panel style shared by intro/map/HUD blocks. */
 .card {
   border: 3px solid var(--line);
   border-radius: 20px;
@@ -90,10 +101,12 @@ body::before {
   box-shadow: 8px 8px 0 rgb(0 0 0 / 0.22);
 }
 
+/* Intro copy area above gameplay section. */
 .intro {
   padding: 1rem 1.2rem;
 }
 
+/* Prototype label styling. */
 .label {
   margin: 0;
   text-transform: uppercase;
@@ -102,6 +115,7 @@ body::before {
   color: var(--accent-dark);
 }
 
+/* Display font for major headings. */
 h1,
 h2,
 h3 {
@@ -120,18 +134,21 @@ h1 {
   font-size: 1.05rem;
 }
 
+/* Two-column layout: game canvas + right-side HUD. */
 .game-area {
   display: grid;
   grid-template-columns: 1fr 290px;
   gap: 1rem;
 }
 
+/* Frame containing the playable canvas and absolute-positioned menu overlay. */
 .map-frame {
   position: relative;
   background: #151515;
   overflow: hidden;
 }
 
+/* Pixel-art friendly canvas rendering. */
 #gameMap {
   display: block;
   width: 100%;
@@ -139,6 +156,7 @@ h1 {
   image-rendering: pixelated;
 }
 
+/* Full overlay used for start, victory, and defeat menus. */
 .start-menu {
   position: absolute;
   inset: 0;
@@ -167,6 +185,7 @@ h1 {
   color: #ffb88d;
 }
 
+/* Primary CTA button used to begin/restart a run. */
 #newGameBtn {
   justify-self: center;
   margin-top: 0.5rem;
