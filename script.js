@@ -13,6 +13,7 @@ const newGameBtn = document.getElementById("newGameBtn");
 const fireworksEl = document.getElementById("fireworks");
 const toggleMusicBtn = document.getElementById("toggleMusicBtn");
 const nextBgmBtn = document.getElementById("nextBgmBtn");
+const difficultySelectEl = document.getElementById("difficultySelect");
 
 const tileSize = 32;
 const mapWidth = canvas.width / tileSize;
@@ -35,6 +36,7 @@ let bgmSetIndex = 0;
 let awaitingReplay = false;
 let musicEnabled = true;
 let gameOverTimer = 0;
+let difficulty = "hard";
 
 const bgmSetDurationMs = 120000;
 let map = [];
@@ -271,6 +273,29 @@ const player = {
   isDying: false,
   deathFrame: 0,
 };
+
+const difficultyMultipliers = {
+  easy: 0.25,
+  medium: 0.5,
+  hard: 1,
+};
+
+function getDifficultyMultiplier() {
+  return difficultyMultipliers[difficulty] || difficultyMultipliers.hard;
+}
+
+function setDifficulty(nextDifficulty) {
+  if (!difficultyMultipliers[nextDifficulty]) {
+    return;
+  }
+
+  difficulty = nextDifficulty;
+  if (difficultySelectEl && difficultySelectEl.value !== nextDifficulty) {
+    difficultySelectEl.value = nextDifficulty;
+  }
+
+  updateHud(`Difficulty set to ${difficulty}. IRS speed adjusted.`);
+}
 
 function getIrsSpeedRatio(level) {
   if (level < 2) {
@@ -925,7 +950,7 @@ function updateIrsAgents() {
 
   irsAgents.forEach((agent) => {
     const tilePenalty = map[agent.y][agent.x] === "water" ? 0.75 : 1;
-    agent.progress += (baseRatio * tilePenalty) / 6;
+    agent.progress += (baseRatio * getDifficultyMultiplier() * tilePenalty) / 6;
 
     while (agent.progress >= 1) {
       moveIrsAgent(agent);
@@ -1109,7 +1134,16 @@ newGameBtn.addEventListener("click", () => {
   startNewGame();
 });
 
+if (difficultySelectEl) {
+  difficultySelectEl.addEventListener("change", (event) => {
+    setDifficulty(event.target.value);
+  });
+}
+
 updateMusicButtons();
+if (difficultySelectEl) {
+  difficultySelectEl.value = difficulty;
+}
 
 loadLevel(currentLevel);
 openMenu({
