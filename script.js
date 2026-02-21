@@ -570,6 +570,12 @@ function drawIrsAgent(agent) {
 
   ctx.fillStyle = "#1f5228";
   ctx.fillRect(px + 4, py + 16, 4, 8);
+
+  ctx.fillStyle = "#d8f5c9";
+  ctx.font = "bold 8px Chakra Petch, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("IRS", px + 16, py + 20);
 }
 
 function toggleBoat() {
@@ -911,7 +917,7 @@ function resolveGameOver() {
 }
 
 function updateIrsAgents() {
-  if (currentLevel < 2 || player.isDying) {
+  if (currentLevel < 2 || player.isDying || sales < 1) {
     return;
   }
 
