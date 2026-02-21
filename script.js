@@ -15,6 +15,7 @@ const toggleMusicBtn = document.getElementById("toggleMusicBtn");
 const nextBgmBtn = document.getElementById("nextBgmBtn");
 const difficultySelectEl = document.getElementById("difficultySelect");
 const difficultyPanelEl = document.getElementById("difficultyPanel");
+const difficultyPanelEl = document.getElementById("difficultyPanel");
 
 const tileSize = 32;
 const mapWidth = canvas.width / tileSize;
@@ -1094,11 +1095,13 @@ function startNewGame() {
   loadLevel(currentLevel);
   hasStartedGame = true;
   startMenuEl.classList.add("hidden");
-  gameRunning = true;
-  lastFrameTimeMs = null;
-  startBgmSetRotation();
-  startMusicLoop();
-  gameLoop();
+  if (!gameRunning) {
+    gameRunning = true;
+    lastFrameTimeMs = null;
+    startBgmSetRotation();
+    startMusicLoop();
+    gameLoop();
+  }
 }
 
 window.addEventListener("keydown", (event) => {
