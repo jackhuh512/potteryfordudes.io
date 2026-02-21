@@ -37,6 +37,7 @@ let awaitingReplay = false;
 let musicEnabled = true;
 let gameOverTimer = 0;
 let difficulty = "hard";
+let lastFrameTimeMs = null;
 
 const bgmSetDurationMs = 120000;
 let map = [];
@@ -268,7 +269,7 @@ const levelConfigs = {
 const player = {
   x: 3,
   y: 3,
-  moveDelay: 0,
+  moveCooldownMs: 0,
   facing: { x: 0, y: 1 },
   isDying: false,
   deathFrame: 0,
@@ -358,7 +359,8 @@ function loadLevel(level) {
   boatEquipped = false;
   player.x = 3;
   player.y = 3;
-  player.moveDelay = 0;
+  player.moveCooldownMs = 0;
+  lastFrameTimeMs = null;
   player.facing = { x: 0, y: 1 };
   player.isDying = false;
   player.deathFrame = 0;
@@ -710,13 +712,13 @@ function move(dx, dy) {
   }
 }
 
-function handleMovement() {
+function handleMovement(deltaMs) {
   if (player.isDying) {
     return;
   }
 
-  if (player.moveDelay > 0) {
-    player.moveDelay -= 1;
+  if (player.moveCooldownMs > 0) {
+    player.moveCooldownMs = Math.max(0, player.moveCooldownMs - deltaMs);
     return;
   }
 
@@ -732,7 +734,7 @@ function handleMovement() {
     return;
   }
 
-  player.moveDelay = 6;
+  player.moveCooldownMs = 100;
 }
 
 function drawTile(x, y, type) {
@@ -1036,12 +1038,18 @@ function trySell() {
   updateHud(`${target.name} bought a pot. Keep selling, Isaac.`);
 }
 
-function gameLoop() {
+function gameLoop(timestamp = performance.now()) {
   if (!gameRunning) {
     return;
   }
 
-  handleMovement();
+  if (lastFrameTimeMs === null) {
+    lastFrameTimeMs = timestamp;
+  }
+  const deltaMs = Math.min(100, timestamp - lastFrameTimeMs);
+  lastFrameTimeMs = timestamp;
+
+  handleMovement(deltaMs);
   updateIrsAgents();
 
   if (player.isDying) {
@@ -1072,6 +1080,7 @@ function startNewGame() {
   startMenuEl.classList.add("hidden");
   if (!gameRunning) {
     gameRunning = true;
+    lastFrameTimeMs = null;
     startBgmSetRotation();
     startMusicLoop();
     gameLoop();
