@@ -13,6 +13,7 @@ const newGameBtn = document.getElementById("newGameBtn");
 const fireworksEl = document.getElementById("fireworks");
 const toggleMusicBtn = document.getElementById("toggleMusicBtn");
 const nextBgmBtn = document.getElementById("nextBgmBtn");
+const difficultySelectEl = document.getElementById("difficultySelect");
 
 const tileSize = 32;
 const mapWidth = canvas.width / tileSize;
@@ -34,10 +35,14 @@ let musicStepIndex = 0;
 let bgmSetIndex = 0;
 let awaitingReplay = false;
 let musicEnabled = true;
+let gameOverTimer = 0;
+let difficulty = "hard";
+let lastFrameTimeMs = null;
 
 const bgmSetDurationMs = 120000;
 let map = [];
 let dudes = [];
+let irsAgents = [];
 
 const keys = new Set();
 const musicProfile = {
@@ -179,6 +184,10 @@ const levelConfigs = {
       { x: 18, y: 5, name: "Dude Kai" },
       { x: 6, y: 2, name: "Dude Ren" },
     ],
+    irsSpawns: [
+      { x: 17, y: 11 },
+      { x: 2, y: 2 },
+    ],
   },
   3: {
     goal: 6,
@@ -195,6 +204,11 @@ const levelConfigs = {
       { x: 16, y: 5, name: "Dude Kai" },
       { x: 18, y: 10, name: "Dude Ren" },
       { x: 5, y: 12, name: "Dude Sol" },
+    ],
+    irsSpawns: [
+      { x: 17, y: 11 },
+      { x: 2, y: 2 },
+      { x: 10, y: 2 },
     ],
   },
   4: {
@@ -214,6 +228,12 @@ const levelConfigs = {
       { x: 16, y: 4, name: "Dude Ren" },
       { x: 18, y: 8, name: "Dude Sol" },
       { x: 17, y: 12, name: "Dude Jax" },
+    ],
+    irsSpawns: [
+      { x: 17, y: 11 },
+      { x: 2, y: 2 },
+      { x: 10, y: 2 },
+      { x: 2, y: 12 },
     ],
   },
   5: {
@@ -236,15 +256,58 @@ const levelConfigs = {
       { x: 18, y: 8, name: "Dude Jax" },
       { x: 18, y: 12, name: "Dude Zen" },
     ],
+    irsSpawns: [
+      { x: 17, y: 11 },
+      { x: 2, y: 2 },
+      { x: 10, y: 2 },
+      { x: 2, y: 12 },
+      { x: 16, y: 2 },
+    ],
   },
 };
 
 const player = {
   x: 3,
   y: 3,
-  moveDelay: 0,
+  moveCooldownMs: 0,
   facing: { x: 0, y: 1 },
+  isDying: false,
+  deathFrame: 0,
 };
+
+const difficultyMultipliers = {
+  easy: 0.25,
+  medium: 0.5,
+  hard: 1,
+};
+
+function getDifficultyMultiplier() {
+  return difficultyMultipliers[difficulty] || difficultyMultipliers.hard;
+}
+
+function setDifficulty(nextDifficulty) {
+  if (!difficultyMultipliers[nextDifficulty]) {
+    return;
+  }
+
+  difficulty = nextDifficulty;
+  if (difficultySelectEl && difficultySelectEl.value !== nextDifficulty) {
+    difficultySelectEl.value = nextDifficulty;
+  }
+
+  updateHud(`Difficulty set to ${difficulty}. IRS speed adjusted.`);
+}
+
+function getIrsSpeedRatio(level) {
+  if (level < 2) {
+    return 0;
+  }
+
+  const minRatio = 0.5;
+  const maxRatio = 0.9;
+  const t = (level - 2) / 3;
+  return minRatio + (maxRatio - minRatio) * t;
+}
 
 function updateHud(text) {
   inventoryEl.textContent = `Pottery left: ${pottery}`;
@@ -296,13 +359,21 @@ function loadLevel(level) {
   boatEquipped = false;
   player.x = 3;
   player.y = 3;
-  player.moveDelay = 0;
+  player.moveCooldownMs = 0;
+  lastFrameTimeMs = null;
   player.facing = { x: 0, y: 1 };
+  player.isDying = false;
+  player.deathFrame = 0;
+  gameOverTimer = 0;
 
   map = createBaseMap();
   applyWaterRects(map, config.waterRects);
 
   dudes = config.dudes.map((dude) => ({ ...dude, bought: false }));
+  irsAgents = (config.irsSpawns || []).map((spawn) => ({
+    ...spawn,
+    progress: 0,
+  }));
   musicStepIndex = 0;
   bgmSetIndex = 0;
   keys.clear();
@@ -514,6 +585,26 @@ function walkable(x, y) {
   return tile !== "water";
 }
 
+function drawIrsAgent(agent) {
+  const px = agent.x * tileSize;
+  const py = agent.y * tileSize;
+
+  ctx.fillStyle = "#8ed26f";
+  ctx.fillRect(px + 8, py + 4, 16, 10);
+
+  ctx.fillStyle = "#2f7d3c";
+  ctx.fillRect(px + 6, py + 14, 20, 13);
+
+  ctx.fillStyle = "#1f5228";
+  ctx.fillRect(px + 4, py + 16, 4, 8);
+
+  ctx.fillStyle = "#d8f5c9";
+  ctx.font = "bold 8px Chakra Petch, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("IRS", px + 16, py + 20);
+}
+
 function toggleBoat() {
   if (!hasBoat) {
     updateHud("Isaac does not have a boat yet.");
@@ -621,9 +712,13 @@ function move(dx, dy) {
   }
 }
 
-function handleMovement() {
-  if (player.moveDelay > 0) {
-    player.moveDelay -= 1;
+function handleMovement(deltaMs) {
+  if (player.isDying) {
+    return;
+  }
+
+  if (player.moveCooldownMs > 0) {
+    player.moveCooldownMs = Math.max(0, player.moveCooldownMs - deltaMs);
     return;
   }
 
@@ -639,7 +734,7 @@ function handleMovement() {
     return;
   }
 
-  player.moveDelay = 6;
+  player.moveCooldownMs = 100;
 }
 
 function drawTile(x, y, type) {
@@ -679,6 +774,25 @@ function drawPlayer() {
   const px = player.x * tileSize;
   const py = player.y * tileSize;
 
+  if (player.isDying) {
+    if (player.deathFrame > 30) {
+      return;
+    }
+
+    const pulse = 1 + Math.sin(player.deathFrame * 0.6) * 0.2;
+    const bodyWidth = Math.max(8, Math.floor(16 * (1 - player.deathFrame / 35) * pulse));
+    const bodyOffset = Math.floor((32 - bodyWidth) / 2);
+
+    ctx.fillStyle = "#f0c58b";
+    ctx.fillRect(px + bodyOffset, py + 6, bodyWidth, 9);
+    ctx.fillStyle = "#b8483a";
+    ctx.fillRect(px + bodyOffset - 2, py + 15, bodyWidth + 4, 11);
+    return;
+  }
+
+  const facingX = player.facing.x;
+  const facingY = player.facing.y;
+
   if (boatEquipped) {
     ctx.fillStyle = "#6d4128";
     ctx.fillRect(px + 2, py + 18, 28, 10);
@@ -691,6 +805,13 @@ function drawPlayer() {
     ctx.fillRect(px + 10, py + 6, 12, 9);
     ctx.fillStyle = "#2f4f90";
     ctx.fillRect(px + 8, py + 15, 16, 8);
+
+    // Eyes in boat mode still reflect facing direction.
+    const eyeOffsetX = facingX === 0 ? 0 : facingX * 2;
+    const eyeOffsetY = facingY === 0 ? 0 : facingY * 2;
+    ctx.fillStyle = "#1f1f1f";
+    ctx.fillRect(px + 13 + eyeOffsetX, py + 9 + eyeOffsetY, 2, 2);
+    ctx.fillRect(px + 17 + eyeOffsetX, py + 9 + eyeOffsetY, 2, 2);
     return;
   }
 
@@ -700,9 +821,20 @@ function drawPlayer() {
   ctx.fillStyle = "#2f4f90";
   ctx.fillRect(px + 6, py + 14, 20, 13);
 
+  // Eyes are nudged toward the current facing direction.
+  const eyeOffsetX = facingX === 0 ? 0 : facingX * 2;
+  const eyeOffsetY = facingY === 0 ? 0 : facingY * 2;
+  ctx.fillStyle = "#1f1f1f";
+  ctx.fillRect(px + 12 + eyeOffsetX, py + 8 + eyeOffsetY, 2, 2);
+  ctx.fillRect(px + 18 + eyeOffsetX, py + 8 + eyeOffsetY, 2, 2);
+
+  // Pot is always held toward the facing direction.
+  const potBaseX = px + 14 + facingX * 8;
+  const potBaseY = py + 18 + facingY * 8;
   ctx.fillStyle = "#d16b34";
-  ctx.fillRect(px + 2, py + 17, 4, 8);
+  ctx.fillRect(potBaseX, potBaseY, 4, 8);
 }
+
 
 function drawDude(dude) {
   const px = dude.x * tileSize;
@@ -730,7 +862,107 @@ function render() {
   }
 
   dudes.forEach(drawDude);
+  irsAgents.forEach(drawIrsAgent);
   drawPlayer();
+}
+
+function canIrsWalkTo(x, y) {
+  if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) {
+    return false;
+  }
+
+  return map[y][x] !== "wall";
+}
+
+function moveIrsAgent(agent) {
+  const dx = player.x - agent.x;
+  const dy = player.y - agent.y;
+  const horizontalFirst = Math.abs(dx) >= Math.abs(dy);
+
+  const options = horizontalFirst
+    ? [
+        { x: Math.sign(dx), y: 0 },
+        { x: 0, y: Math.sign(dy) },
+      ]
+    : [
+        { x: 0, y: Math.sign(dy) },
+        { x: Math.sign(dx), y: 0 },
+      ];
+
+  options.push(
+    { x: 1, y: 0 },
+    { x: -1, y: 0 },
+    { x: 0, y: 1 },
+    { x: 0, y: -1 }
+  );
+
+  for (const option of options) {
+    if (option.x === 0 && option.y === 0) {
+      continue;
+    }
+
+    const nx = agent.x + option.x;
+    const ny = agent.y + option.y;
+    if (canIrsWalkTo(nx, ny)) {
+      agent.x = nx;
+      agent.y = ny;
+      return;
+    }
+  }
+}
+
+function triggerIsaacDeath() {
+  if (player.isDying) {
+    return;
+  }
+
+  player.isDying = true;
+  player.deathFrame = 0;
+  gameOverTimer = 60;
+  keys.clear();
+  updateHud("The IRS caught Isaac! He dropped every pot.");
+}
+
+function resolveGameOver() {
+  gameRunning = false;
+  stopMusicLoop();
+  stopBgmSetRotation();
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+
+  currentLevel = 1;
+  awaitingReplay = false;
+  updateMusicButtons();
+  loadLevel(currentLevel);
+  openMenu({
+    title: "Game Over",
+    copy: "The IRS shut Isaac down. Start over from Level 1.",
+    buttonText: "Restart Run",
+  });
+}
+
+function updateIrsAgents() {
+  if (currentLevel < 2 || player.isDying || sales < 1) {
+    return;
+  }
+
+  const baseRatio = getIrsSpeedRatio(currentLevel);
+
+  irsAgents.forEach((agent) => {
+    const tilePenalty = map[agent.y][agent.x] === "water" ? 0.75 : 1;
+    agent.progress += (baseRatio * getDifficultyMultiplier() * tilePenalty) / 6;
+
+    while (agent.progress >= 1) {
+      moveIrsAgent(agent);
+      agent.progress -= 1;
+    }
+
+    if (agent.x === player.x && agent.y === player.y) {
+      triggerIsaacDeath();
+    }
+  });
 }
 
 function completeLevel() {
@@ -806,12 +1038,32 @@ function trySell() {
   updateHud(`${target.name} bought a pot. Keep selling, Isaac.`);
 }
 
-function gameLoop() {
+function gameLoop(timestamp = performance.now()) {
   if (!gameRunning) {
     return;
   }
 
-  handleMovement();
+  if (lastFrameTimeMs === null) {
+    lastFrameTimeMs = timestamp;
+  }
+  const deltaMs = Math.min(100, timestamp - lastFrameTimeMs);
+  lastFrameTimeMs = timestamp;
+
+  handleMovement(deltaMs);
+  updateIrsAgents();
+
+  if (player.isDying) {
+    player.deathFrame += 1;
+    if (player.deathFrame > 30) {
+      if (gameOverTimer > 0) {
+        gameOverTimer -= 1;
+      } else {
+        resolveGameOver();
+        return;
+      }
+    }
+  }
+
   render();
   animationFrameId = requestAnimationFrame(gameLoop);
 }
@@ -828,6 +1080,7 @@ function startNewGame() {
   startMenuEl.classList.add("hidden");
   if (!gameRunning) {
     gameRunning = true;
+    lastFrameTimeMs = null;
     startBgmSetRotation();
     startMusicLoop();
     gameLoop();
@@ -852,6 +1105,10 @@ window.addEventListener("keydown", (event) => {
       event.preventDefault();
       startNewGame();
     }
+    return;
+  }
+
+  if (player.isDying) {
     return;
   }
 
@@ -886,7 +1143,16 @@ newGameBtn.addEventListener("click", () => {
   startNewGame();
 });
 
+if (difficultySelectEl) {
+  difficultySelectEl.addEventListener("change", (event) => {
+    setDifficulty(event.target.value);
+  });
+}
+
 updateMusicButtons();
+if (difficultySelectEl) {
+  difficultySelectEl.value = difficulty;
+}
 
 loadLevel(currentLevel);
 openMenu({
