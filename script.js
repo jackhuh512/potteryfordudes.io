@@ -1,3 +1,12 @@
+/**
+ * Core game script for potteryfordudes.io.
+ *
+ * High-level flow:
+ * 1) Cache DOM/canvas handles and static config data.
+ * 2) Maintain mutable run state (player, level, inventory, enemies, audio).
+ * 3) Run a requestAnimationFrame loop to update logic and paint the frame.
+ */
+
 const canvas = document.getElementById("gameMap");
 const ctx = canvas.getContext("2d");
 
@@ -14,7 +23,6 @@ const fireworksEl = document.getElementById("fireworks");
 const toggleMusicBtn = document.getElementById("toggleMusicBtn");
 const nextBgmBtn = document.getElementById("nextBgmBtn");
 const difficultySelectEl = document.getElementById("difficultySelect");
-const difficultyPanelEl = document.getElementById("difficultyPanel");
 const difficultyPanelEl = document.getElementById("difficultyPanel");
 
 const tileSize = 32;
@@ -284,10 +292,16 @@ const difficultyMultipliers = {
   hard: 1,
 };
 
+/**
+ * Converts the selected difficulty into numeric multipliers used for economy and enemy speed.
+ */
 function getDifficultyMultiplier() {
   return difficultyMultipliers[difficulty] || difficultyMultipliers.hard;
 }
 
+/**
+ * Stores difficulty selection and updates the UI copy before a run starts.
+ */
 function setDifficulty(nextDifficulty) {
   if (!difficultyMultipliers[nextDifficulty]) {
     return;
@@ -301,6 +315,9 @@ function setDifficulty(nextDifficulty) {
   updateHud(`Difficulty set to ${difficulty}. IRS speed adjusted.`);
 }
 
+/**
+ * Scales IRS movement speed by both level progression and selected difficulty.
+ */
 function getIrsSpeedRatio(level) {
   if (level < 2) {
     return 0;
@@ -312,6 +329,9 @@ function getIrsSpeedRatio(level) {
   return minRatio + (maxRatio - minRatio) * t;
 }
 
+/**
+ * Refreshes all HUD text so the player always sees current game state and guidance.
+ */
 function updateHud(text) {
   inventoryEl.textContent = `Pottery left: ${pottery}`;
   salesEl.textContent = `Sales made: ${sales} / ${goal}`;
@@ -324,6 +344,9 @@ function updateHud(text) {
   }
 }
 
+/**
+ * Builds a fresh grass-and-wall tile map for the current level before hazards are painted.
+ */
 function createBaseMap() {
   const baseMap = Array.from({ length: mapHeight }, (_, y) =>
     Array.from({ length: mapWidth }, (_, x) => {
@@ -342,6 +365,9 @@ function createBaseMap() {
   return baseMap;
 }
 
+/**
+ * Paints rectangular lake/river regions into the base map based on level configuration.
+ */
 function applyWaterRects(baseMap, waterRects) {
   waterRects.forEach((rect) => {
     for (let y = rect.y1; y <= rect.y2; y += 1) {
@@ -354,6 +380,9 @@ function applyWaterRects(baseMap, waterRects) {
   });
 }
 
+/**
+ * Loads one level config and resets all level-specific entities and win conditions.
+ */
 function loadLevel(level) {
   const config = levelConfigs[level];
   goal = config.dudes.length;
@@ -391,6 +420,9 @@ function loadLevel(level) {
   render();
 }
 
+/**
+ * Shows the full-screen menu overlay for start, level transitions, wins, and losses.
+ */
 function openMenu({ title, copy, buttonText, celebration = false, showDifficulty = false }) {
   menuTitleEl.textContent = title;
   menuCopyEl.textContent = copy;
@@ -404,6 +436,9 @@ function openMenu({ title, copy, buttonText, celebration = false, showDifficulty
 }
 
 
+/**
+ * Keeps music button labels synchronized with current enabled state and selected set.
+ */
 function updateMusicButtons() {
   if (!toggleMusicBtn || !nextBgmBtn) {
     return;
@@ -412,6 +447,9 @@ function updateMusicButtons() {
   toggleMusicBtn.textContent = `Music: ${musicEnabled ? "On" : "Off"}`;
 }
 
+/**
+ * Creates (or resumes) the Web Audio context only when needed by user interaction.
+ */
 function ensureAudioContext() {
   if (!audioContext) {
     audioContext = new window.AudioContext();
@@ -422,6 +460,9 @@ function ensureAudioContext() {
   }
 }
 
+/**
+ * Plays a short synthesized note using an oscillator + gain envelope.
+ */
 function playSynthNote({
   frequency,
   duration,
@@ -451,15 +492,24 @@ function playSynthNote({
   osc.stop(endTime + 0.01);
 }
 
+/**
+ * Returns the currently active BGM set object based on bgmSetIndex.
+ */
 function currentMusicSet() {
   return musicProfile.sets[bgmSetIndex % musicProfile.sets.length];
 }
 
+/**
+ * Chooses normal or boat variant of the active BGM set depending on boat state.
+ */
 function currentTrack() {
   const set = currentMusicSet();
   return boatEquipped ? set.boat : set.normal;
 }
 
+/**
+ * Stops scheduled BGM step playback and clears the timer.
+ */
 function stopMusicLoop() {
   if (musicTimerId) {
     clearTimeout(musicTimerId);
@@ -467,6 +517,9 @@ function stopMusicLoop() {
   }
 }
 
+/**
+ * Stops automatic rotation that changes BGM set every configured interval.
+ */
 function stopBgmSetRotation() {
   if (bgmSetTimerId) {
     clearInterval(bgmSetTimerId);
@@ -474,6 +527,9 @@ function stopBgmSetRotation() {
   }
 }
 
+/**
+ * Moves to the next BGM set and restarts playback so change is immediate.
+ */
 function advanceBgmSet() {
   bgmSetIndex = (bgmSetIndex + 1) % musicProfile.sets.length;
   musicStepIndex = 0;
@@ -483,6 +539,9 @@ function advanceBgmSet() {
   updateHud(`Now playing soundtrack vibe: ${currentMusicSet().vibe}.`);
 }
 
+/**
+ * Starts interval that periodically advances to the next BGM set.
+ */
 function startBgmSetRotation() {
   stopBgmSetRotation();
   if (!musicEnabled) {
@@ -491,6 +550,9 @@ function startBgmSetRotation() {
   bgmSetTimerId = setInterval(advanceBgmSet, bgmSetDurationMs);
 }
 
+/**
+ * Schedules one rhythmic step (lead + bass) and queues the next step with a timeout.
+ */
 function scheduleMusicStep() {
   if (!gameRunning || !audioContext) {
     return;
@@ -519,6 +581,9 @@ function scheduleMusicStep() {
   musicTimerId = setTimeout(scheduleMusicStep, beatSeconds * 1000);
 }
 
+/**
+ * Starts looping BGM playback and set rotation when music is enabled.
+ */
 function startMusicLoop() {
   if (!gameRunning || !musicEnabled) {
     return;
@@ -529,6 +594,9 @@ function startMusicLoop() {
   scheduleMusicStep();
 }
 
+/**
+ * Turns music on/off, updates buttons, and starts/stops loops accordingly.
+ */
 function toggleMusicEnabled() {
   musicEnabled = !musicEnabled;
   updateMusicButtons();
@@ -547,6 +615,9 @@ function toggleMusicEnabled() {
   updateHud(`Music enabled. Current soundtrack vibe: ${currentMusicSet().vibe}.`);
 }
 
+/**
+ * Plays the short sale SFX chord when a successful pottery sale happens.
+ */
 function playSaleChaching() {
   if (!musicEnabled) {
     return;
@@ -571,6 +642,9 @@ function playSaleChaching() {
   });
 }
 
+/**
+ * Checks whether Isaac can stand on a tile (including boat logic for water travel).
+ */
 function walkable(x, y) {
   if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) {
     return false;
@@ -591,6 +665,9 @@ function walkable(x, y) {
   return tile !== "water";
 }
 
+/**
+ * Renders an IRS agent sprite at tile coordinates on the canvas.
+ */
 function drawIrsAgent(agent) {
   const px = agent.x * tileSize;
   const py = agent.y * tileSize;
@@ -611,6 +688,9 @@ function drawIrsAgent(agent) {
   ctx.fillText("IRS", px + 16, py + 20);
 }
 
+/**
+ * Toggles boat equip state and updates movement/audio rules plus HUD messaging.
+ */
 function toggleBoat() {
   if (!hasBoat) {
     updateHud("Isaac does not have a boat yet.");
@@ -684,6 +764,9 @@ function toggleBoat() {
   }
 }
 
+/**
+ * Attempts player movement by tile while respecting map collisions and bounds.
+ */
 function move(dx, dy) {
   player.facing = { x: dx, y: dy };
   const nx = player.x + dx;
@@ -718,6 +801,9 @@ function move(dx, dy) {
   }
 }
 
+/**
+ * Reads pressed keys and converts frame delta time into tile movement attempts.
+ */
 function handleMovement(deltaMs) {
   if (player.isDying) {
     return;
@@ -743,6 +829,9 @@ function handleMovement(deltaMs) {
   player.moveCooldownMs = 100;
 }
 
+/**
+ * Draws one map tile with style based on tile type (grass/water/wall/etc.).
+ */
 function drawTile(x, y, type) {
   const px = x * tileSize;
   const py = y * tileSize;
@@ -776,6 +865,9 @@ function drawTile(x, y, type) {
   }
 }
 
+/**
+ * Draws Isaac at his current tile coordinate.
+ */
 function drawPlayer() {
   const px = player.x * tileSize;
   const py = player.y * tileSize;
@@ -842,6 +934,9 @@ function drawPlayer() {
 }
 
 
+/**
+ * Draws a customer NPC on the map with simple body/head shapes.
+ */
 function drawDude(dude) {
   const px = dude.x * tileSize;
   const py = dude.y * tileSize;
@@ -858,6 +953,9 @@ function drawDude(dude) {
   }
 }
 
+/**
+ * Draws the complete frame: map, NPCs, agents, and player.
+ */
 function render() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -872,6 +970,9 @@ function render() {
   drawPlayer();
 }
 
+/**
+ * Pathing helper for IRS agents, limiting where they are allowed to move.
+ */
 function canIrsWalkTo(x, y) {
   if (x < 0 || y < 0 || x >= mapWidth || y >= mapHeight) {
     return false;
@@ -880,6 +981,9 @@ function canIrsWalkTo(x, y) {
   return map[y][x] !== "wall";
 }
 
+/**
+ * Moves one IRS agent one step toward Isaac (or along fallback movement).
+ */
 function moveIrsAgent(agent) {
   const dx = player.x - agent.x;
   const dy = player.y - agent.y;
@@ -917,6 +1021,9 @@ function moveIrsAgent(agent) {
   }
 }
 
+/**
+ * Starts death/game-over sequence when IRS catches Isaac.
+ */
 function triggerIsaacDeath() {
   if (player.isDying) {
     return;
@@ -929,6 +1036,9 @@ function triggerIsaacDeath() {
   updateHud("The IRS caught Isaac! He dropped every pot.");
 }
 
+/**
+ * Finalizes game-over state and reopens the menu for replay.
+ */
 function resolveGameOver() {
   gameRunning = false;
   stopMusicLoop();
@@ -950,6 +1060,9 @@ function resolveGameOver() {
   });
 }
 
+/**
+ * Ticks IRS agent AI movement timer and collision checks each frame.
+ */
 function updateIrsAgents() {
   if (currentLevel < 2 || player.isDying || sales < 1) {
     return;
@@ -972,6 +1085,9 @@ function updateIrsAgents() {
   });
 }
 
+/**
+ * Handles level completion, progression, and final victory flow.
+ */
 function completeLevel() {
   gameRunning = false;
   stopMusicLoop();
@@ -1005,6 +1121,9 @@ function completeLevel() {
   });
 }
 
+/**
+ * Attempts to sell pottery to an adjacent dude when interact key is pressed.
+ */
 function trySell() {
   const targetX = player.x + player.facing.x;
   const targetY = player.y + player.facing.y;
@@ -1047,6 +1166,9 @@ function trySell() {
   updateHud(`${target.name} bought a pot. Keep selling, Isaac.`);
 }
 
+/**
+ * Main animation loop that updates gameplay and renders each frame.
+ */
 function gameLoop(timestamp = performance.now()) {
   if (!gameRunning) {
     return;
@@ -1077,6 +1199,9 @@ function gameLoop(timestamp = performance.now()) {
   animationFrameId = requestAnimationFrame(gameLoop);
 }
 
+/**
+ * Resets global run state and starts level 1 from the menu.
+ */
 function startNewGame() {
   if (awaitingReplay || currentLevel > maxLevel) {
     currentLevel = 1;

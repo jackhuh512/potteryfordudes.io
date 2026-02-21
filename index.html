@@ -1,18 +1,23 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- Basic metadata + responsive viewport for mobile/desktop scaling. -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>potteryfordudes.io | Isaac's First Map</title>
+    <!-- Preconnect improves font-loading performance for Google Fonts. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Display fonts used by headings + body copy. -->
     <link
       href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Chakra+Petch:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
+    <!-- Main site styles for layout, HUD, and menu visuals. -->
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <!-- Outer app shell that wraps intro text, map canvas, and the right-side HUD. -->
     <main class="shell">
       <section class="intro card">
         <p class="label">Prototype Build: One Map</p>
@@ -26,12 +31,16 @@
 
       <section class="game-area">
         <div class="map-frame card">
+          <!-- Canvas is where all tile/NPC/player rendering happens in script.js. -->
           <canvas id="gameMap" width="640" height="448" aria-label="Game Map"></canvas>
+          <!-- Start/pause/end overlay menu. Shown/hidden by JS depending on game state. -->
           <div id="startMenu" class="start-menu">
             <p class="menu-label">potteryfordudes.io</p>
             <h2 id="menuTitle">ClayTown Start Menu</h2>
             <p id="menuCopy">Isaac is ready to sell pots to dudes. Start a fresh run on this map.</p>
+            <!-- Decorative celebration particles toggled on victory states. -->
             <div id="fireworks" class="fireworks hidden" aria-hidden="true"></div>
+            <!-- Difficulty only appears on run start to avoid changing challenge mid-level. -->
             <div id="difficultyPanel">
               <label for="difficultySelect" class="difficulty-label">Difficulty</label>
               <select id="difficultySelect" aria-label="Difficulty">
@@ -45,6 +54,7 @@
         </div>
 
         <aside class="hud card">
+          <!-- Live gameplay stats are updated each frame/interaction by updateHud(). -->
           <h2>Isaac's Cart</h2>
           <p id="inventory">Pottery left: 10</p>
           <p id="sales">Sales made: 0 / 4</p>
@@ -59,6 +69,7 @@
             <p>Toggle Boat: B</p>
             <p>Music Toggle: M</p>
             <p>Next BGM Set: N</p>
+            <!-- Optional clickable controls that mirror keyboard music controls. -->
             <div class="music-controls" role="group" aria-label="Music Controls">
               <button id="toggleMusicBtn" type="button">Music: On</button>
               <button id="nextBgmBtn" type="button">Next BGM Set</button>
@@ -68,6 +79,7 @@
       </section>
     </main>
 
+    <!-- Main gameplay and audio logic. -->
     <script src="script.js"></script>
   </body>
 </html>
