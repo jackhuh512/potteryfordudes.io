@@ -41,6 +41,7 @@ let animationFrameId = null;
 let audioContext = null;
 let musicTimerId = null;
 let bgmSetTimerId = null;
+let gameOverMusicTimerIds = [];
 let musicStepIndex = 0;
 let bgmSetIndex = 0;
 let awaitingReplay = false;
@@ -51,6 +52,7 @@ let hasStartedGame = false;
 let lastFrameTimeMs = null;
 
 const bgmSetDurationMs = 120000;
+const bgmTempoMultiplier = 1.2;
 let map = [];
 let dudes = [];
 let irsAgents = [];
@@ -528,6 +530,14 @@ function stopBgmSetRotation() {
 }
 
 /**
+ * Cancels any queued sad-violin game-over notes.
+ */
+function stopGameOverMusic() {
+  gameOverMusicTimerIds.forEach((timerId) => clearTimeout(timerId));
+  gameOverMusicTimerIds = [];
+}
+
+/**
  * Moves to the next BGM set and restarts playback so change is immediate.
  */
 function advanceBgmSet() {
@@ -559,7 +569,7 @@ function scheduleMusicStep() {
   }
 
   const track = currentTrack();
-  const beatSeconds = 60 / track.bpm;
+  const beatSeconds = 60 / (track.bpm * bgmTempoMultiplier);
   const stepFrequency = track.steps[musicStepIndex % track.steps.length];
 
   playSynthNote({
@@ -579,6 +589,54 @@ function scheduleMusicStep() {
 
   musicStepIndex += 1;
   musicTimerId = setTimeout(scheduleMusicStep, beatSeconds * 1000);
+}
+
+/**
+ * Plays a short "sad violin" phrase for the game-over menu after Isaac dies.
+ */
+function playGameOverViolin() {
+  if (!musicEnabled) {
+    return;
+  }
+
+  ensureAudioContext();
+  stopGameOverMusic();
+
+  const violinPhrase = [
+    { frequency: 659.25, beats: 1.5 },
+    { frequency: 587.33, beats: 1.5 },
+    { frequency: 523.25, beats: 2 },
+    { frequency: 493.88, beats: 2 },
+    { frequency: 440, beats: 3 },
+  ];
+  const lamentBpm = 48;
+  const beatSeconds = 60 / lamentBpm;
+
+  let offsetSeconds = 0;
+  violinPhrase.forEach((step, index) => {
+    const timerId = setTimeout(() => {
+      playSynthNote({
+        frequency: step.frequency,
+        duration: beatSeconds * step.beats * 0.95,
+        type: "sawtooth",
+        volume: 0.05,
+      });
+      playSynthNote({
+        frequency: step.frequency / 2,
+        duration: beatSeconds * step.beats * 0.75,
+        when: 0.02,
+        type: "triangle",
+        volume: 0.018,
+      });
+
+      if (index === violinPhrase.length - 1) {
+        gameOverMusicTimerIds = [];
+      }
+    }, offsetSeconds * 1000);
+
+    gameOverMusicTimerIds.push(timerId);
+    offsetSeconds += beatSeconds * step.beats;
+  });
 }
 
 /**
@@ -1043,6 +1101,7 @@ function resolveGameOver() {
   gameRunning = false;
   stopMusicLoop();
   stopBgmSetRotation();
+  stopGameOverMusic();
   if (animationFrameId) {
     cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
@@ -1058,6 +1117,7 @@ function resolveGameOver() {
     buttonText: "Restart Run",
     showDifficulty: false,
   });
+  playGameOverViolin();
 }
 
 /**
@@ -1216,6 +1276,7 @@ function startNewGame() {
   }
   stopMusicLoop();
   stopBgmSetRotation();
+  stopGameOverMusic();
 
   loadLevel(currentLevel);
   hasStartedGame = true;
