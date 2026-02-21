@@ -14,6 +14,10 @@ const fireworksEl = document.getElementById("fireworks");
 const toggleMusicBtn = document.getElementById("toggleMusicBtn");
 const nextBgmBtn = document.getElementById("nextBgmBtn");
 const difficultySelectEl = document.getElementById("difficultySelect");
+<<<<<<< codex/add-irs-enemy-with-game-over-mechanic-vlvlp2
+const difficultyPanelEl = document.getElementById("difficultyPanel");
+=======
+>>>>>>> main
 
 const tileSize = 32;
 const mapWidth = canvas.width / tileSize;
@@ -36,7 +40,8 @@ let bgmSetIndex = 0;
 let awaitingReplay = false;
 let musicEnabled = true;
 let gameOverTimer = 0;
-let difficulty = "hard";
+let difficulty = "easy";
+let hasStartedGame = false;
 let lastFrameTimeMs = null;
 
 const bgmSetDurationMs = 120000;
@@ -388,12 +393,15 @@ function loadLevel(level) {
   render();
 }
 
-function openMenu({ title, copy, buttonText, celebration = false }) {
+function openMenu({ title, copy, buttonText, celebration = false, showDifficulty = false }) {
   menuTitleEl.textContent = title;
   menuCopyEl.textContent = copy;
   newGameBtn.textContent = buttonText;
   fireworksEl.classList.toggle("hidden", !celebration);
   startMenuEl.classList.toggle("celebration", celebration);
+  if (difficultyPanelEl) {
+    difficultyPanelEl.classList.toggle("hidden", !showDifficulty);
+  }
   startMenuEl.classList.remove("hidden");
 }
 
@@ -940,6 +948,10 @@ function resolveGameOver() {
     title: "Game Over",
     copy: "The IRS shut Isaac down. Start over from Level 1.",
     buttonText: "Restart Run",
+<<<<<<< codex/add-irs-enemy-with-game-over-mechanic-vlvlp2
+    showDifficulty: false,
+=======
+>>>>>>> main
   });
 }
 
@@ -980,6 +992,7 @@ function completeLevel() {
       copy: "You cleared all 5 levels. ClayTown is celebrating with fireworks!",
       buttonText: "Play Again",
       celebration: true,
+      showDifficulty: false,
     });
     return;
   }
@@ -993,6 +1006,7 @@ function completeLevel() {
     title: `Level ${currentLevel} Unlocked`,
     copy: `More water and more dudes await. Reach ${goal} sales to clear this level.`,
     buttonText: `Start Level ${currentLevel}`,
+    showDifficulty: false,
   });
 }
 
@@ -1077,6 +1091,7 @@ function startNewGame() {
   updateMusicButtons();
 
   loadLevel(currentLevel);
+  hasStartedGame = true;
   startMenuEl.classList.add("hidden");
   if (!gameRunning) {
     gameRunning = true;
@@ -1159,4 +1174,5 @@ openMenu({
   title: "ClayTown Start Menu",
   copy: "Isaac is ready to sell pots to dudes. Conquer 5 levels of rising difficulty.",
   buttonText: "Start Level 1",
+  showDifficulty: !hasStartedGame,
 });

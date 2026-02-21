@@ -206,6 +206,10 @@ h1 {
 }
 
 
+#difficultyPanel.hidden {
+  display: none;
+}
+
 .hud {
   padding: 1rem;
   background: linear-gradient(180deg, var(--panel), var(--panel-strong));

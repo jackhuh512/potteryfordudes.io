@@ -32,12 +32,14 @@
             <h2 id="menuTitle">ClayTown Start Menu</h2>
             <p id="menuCopy">Isaac is ready to sell pots to dudes. Start a fresh run on this map.</p>
             <div id="fireworks" class="fireworks hidden" aria-hidden="true"></div>
-            <label for="difficultySelect" class="difficulty-label">Difficulty</label>
-            <select id="difficultySelect" aria-label="Difficulty">
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard" selected>Hard</option>
-            </select>
+            <div id="difficultyPanel">
+              <label for="difficultySelect" class="difficulty-label">Difficulty</label>
+              <select id="difficultySelect" aria-label="Difficulty">
+                <option value="easy" selected>Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
             <button id="newGameBtn" type="button">New Game</button>
           </div>
         </div>
