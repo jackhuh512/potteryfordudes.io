@@ -1,11 +1,21 @@
+// @ts-check
+
+/** @typedef {import('./types.d.ts').Difficulty} Difficulty */
+/** @typedef {import('./types.d.ts').GameState} GameState */
+
 export const tileSize = 32;
 
+/** @type {Record<Difficulty, number>} */
 export const difficultyMultipliers = {
   easy: 0.25,
   medium: 0.5,
   hard: 1,
 };
 
+/**
+ * @param {{ mapWidth: number; mapHeight: number }} dimensions
+ * @returns {GameState}
+ */
 export function createInitialState({ mapWidth, mapHeight }) {
   return {
     mapWidth,

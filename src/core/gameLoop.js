@@ -1,5 +1,6 @@
 import { levelConfigs, maxLevel } from '../content/levels.js';
 import { createInitialState, difficultyMultipliers, tileSize } from './state.js';
+import { resetStateForLevel, setDifficulty as setStateDifficulty } from './transitions.js';
 import { createRenderer } from '../systems/render.js';
 import { createAudioSystem } from '../systems/audio.js';
 import { bindInput } from '../systems/input.js';
@@ -48,11 +49,10 @@ export function createGame() {
   }
 
   function setDifficulty(nextDifficulty) {
-    if (!difficultyMultipliers[nextDifficulty]) {
+    if (!setStateDifficulty(state, nextDifficulty)) {
       return;
     }
 
-    state.difficulty = nextDifficulty;
     if (elements.difficultySelectEl && elements.difficultySelectEl.value !== nextDifficulty) {
       elements.difficultySelectEl.value = nextDifficulty;
     }
@@ -71,61 +71,10 @@ export function createGame() {
     return minRatio + (maxRatio - minRatio) * t;
   }
 
-  function createBaseMap() {
-    const baseMap = Array.from({ length: mapHeight }, (_, y) =>
-      Array.from({ length: mapWidth }, (_, x) => {
-        if (x < 1 || y < 1 || x > mapWidth - 2 || y > mapHeight - 2) {
-          return 'wall';
-        }
-
-        if ((x > 2 && x < 8 && y > 7 && y < 11) || (x > 15 && y > 2 && y < 5)) {
-          return 'path';
-        }
-
-        return 'grass';
-      }),
-    );
-
-    return baseMap;
-  }
-
-  function applyWaterRects(baseMap, waterRects) {
-    waterRects.forEach((rect) => {
-      for (let y = rect.y1; y <= rect.y2; y += 1) {
-        for (let x = rect.x1; x <= rect.x2; x += 1) {
-          if (x > 0 && y > 0 && x < mapWidth - 1 && y < mapHeight - 1) {
-            baseMap[y][x] = 'water';
-          }
-        }
-      }
-    });
-  }
 
   function loadLevel(level) {
     const config = levelConfigs[level];
-    state.goal = config.dudes.length;
-    state.pottery = state.goal + 5;
-    state.sales = 0;
-    state.boatEquipped = false;
-    state.player.x = 3;
-    state.player.y = 3;
-    state.player.moveCooldownMs = 0;
-    state.lastFrameTimeMs = null;
-    state.player.facing = { x: 0, y: 1 };
-    state.player.isDying = false;
-    state.player.deathFrame = 0;
-    state.gameOverTimer = 0;
-
-    state.map = createBaseMap();
-    applyWaterRects(state.map, config.waterRects);
-
-    state.dudes = config.dudes.map((dude) => ({ ...dude, bought: false }));
-    state.irsAgents = (config.irsSpawns || []).map((spawn) => ({
-      ...spawn,
-      progress: 0,
-    }));
-
-    state.keys.clear();
+    resetStateForLevel(state, config);
     audio.resetTrackState();
     updateHud(`Level ${level}: Walk up to a dude and press E to sell pottery.`);
     renderer.render();
