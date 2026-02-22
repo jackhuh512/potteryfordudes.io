@@ -23,10 +23,16 @@ The infrastructure is efficient for rapid prototyping, but not yet efficient for
 ### Phase 1 (Immediate): Safety net without major rewrites
 **Goal:** Add guardrails while preserving current architecture.
 
-- Add linting (ESLint).
-- Add formatting standards (Prettier).
-- Add a basic CI workflow that runs lint + format check + tests.
-- Add a smoke test that verifies core project wiring and game entry points.
+#### Phase 1A (implemented now)
+- Add standard npm quality scripts.
+- Add dependency-free lint/format guard scripts using Node.
+- Add smoke tests using Node's built-in test runner.
+- Add CI workflow that runs these checks on push/PR.
+
+#### Phase 1B (next step, when package registry access is available)
+- Replace custom lint checks with ESLint rules.
+- Replace custom format checks with Prettier checks.
+- Move smoke tests to Vitest (or keep Node test runner if preferred).
 
 ### Phase 2: Modularization by responsibility
 Split `script.js` into small modules:

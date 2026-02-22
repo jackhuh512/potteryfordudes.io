@@ -43,3 +43,12 @@ That inspired him to make ceramics with a different vibe: pottery that's less "c
 If you played **potteryfordudes.io**, thank you.
 
 Whether you stayed for 30 seconds or finished all 5 levels, you're part of this experiment and I appreciate you checking out this weird little AI + pottery + game-dev journey.
+
+## Quality checks (Phase 1)
+
+Run local guardrails before pushing:
+
+- `npm run lint` — repository hygiene checks
+- `npm run format:check` — newline / line-ending checks
+- `npm test` — smoke tests for game wiring and loop hooks
+- `npm run check` — run all of the above
