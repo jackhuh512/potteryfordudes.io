@@ -14,6 +14,7 @@ test('index wires canvas and module entry point', () => {
 test('index includes essential control and menu elements', () => {
   for (const id of [
     'sales',
+    'potteryLeft',
     'level',
     'boatStatus',
     'flowersSmashed',
@@ -39,7 +40,7 @@ test('entry script bootstraps modular game loop', () => {
 });
 
 import { createInitialState } from '../src/core/state.js';
-import { resetStateForLevel, setDifficulty } from '../src/core/transitions.js';
+import { getStartingPottery, resetStateForLevel, setDifficulty } from '../src/core/transitions.js';
 import { levelConfigs } from '../src/content/levels.js';
 
 test('state transitions module owns level reset and difficulty transitions', () => {
@@ -51,6 +52,7 @@ test('state transitions module owns level reset and difficulty transitions', () 
   resetStateForLevel(state, levelConfigs[2]);
 
   assert.equal(state.goal, levelConfigs[2].goal);
+  assert.equal(state.pottery, levelConfigs[2].dudes.length * 2);
   assert.equal(state.dudes.length, levelConfigs[2].dudes.length);
   assert.equal(state.irsAgents.length, levelConfigs[2].irsSpawns.length);
   assert.equal(state.policeAgents.length, 0);
@@ -60,6 +62,14 @@ test('state transitions module owns level reset and difficulty transitions', () 
   assert.equal(state.map[2][10], 'water');
 });
 
+
+
+
+test('starting pottery scales with difficulty and dude count', () => {
+  assert.equal(getStartingPottery(4, 'easy'), 12);
+  assert.equal(getStartingPottery(4, 'medium'), 8);
+  assert.equal(getStartingPottery(4, 'hard'), 5);
+});
 
 test('each level goal matches number of dudes to sell to', () => {
   for (const config of Object.values(levelConfigs)) {
@@ -73,6 +83,13 @@ test('levels 4 and 5 include police spawns', () => {
   assert.equal(levelConfigs[5].policeSpawns.length, 2);
 });
 
+
+
+
+test('sell action always expends pottery and can trigger pottery depletion game over', () => {
+  assert.match(gameLoopModule, /state\.pottery -= 1;/);
+  assert.match(gameLoopModule, /Isaac ran out of pottery\. Start over from Level 1\./);
+});
 
 test('index documents movement and developer debug controls', () => {
   assert.match(index, /Move: WASD/);

@@ -10,6 +10,7 @@ export function createGame() {
     canvas: document.getElementById('gameMap'),
     salesEl: document.getElementById('sales'),
     levelEl: document.getElementById('level'),
+    potteryLeftEl: document.getElementById('potteryLeft'),
     boatStatusEl: document.getElementById('boatStatus'),
     flowersSmashedEl: document.getElementById('flowersSmashed'),
     messageEl: document.getElementById('message'),
@@ -77,6 +78,9 @@ export function createGame() {
 
   function updateHud(text) {
     elements.salesEl.textContent = `Sales made: ${state.sales} / ${state.goal}`;
+    if (elements.potteryLeftEl) {
+      elements.potteryLeftEl.textContent = `Pottery Left: ${state.pottery}`;
+    }
     elements.levelEl.textContent = `Level: ${state.currentLevel} / ${maxLevel}`;
     elements.boatStatusEl.textContent = `Boat: ${
       state.hasBoat ? (state.boatEquipped ? 'Equipped' : 'Unequipped') : 'Not Owned'
@@ -214,6 +218,12 @@ export function createGame() {
   function toggleBoat() {
     state.telemetry.boatToggles += 1;
 
+    const selfStunDurationMs = 100;
+    const selfStunOnInvalidToggle = (message) => {
+      state.player.moveCooldownMs = Math.max(state.player.moveCooldownMs, selfStunDurationMs);
+      updateHud(`${message} Isaac is stunned for 0.1s.`);
+    };
+
     if (!state.hasBoat) {
       updateHud('Isaac does not have a boat yet.');
       return;
@@ -254,7 +264,7 @@ export function createGame() {
       }
 
       if (targetTile !== 'water') {
-        updateHud('Face water and press K to board the boat.');
+        selfStunOnInvalidToggle('Face water and press K to board the boat.');
         return;
       }
       state.boatEquipped = true;
@@ -268,7 +278,7 @@ export function createGame() {
     }
 
     if (targetTile === 'water') {
-      updateHud('Face land and press K to dock and unequip the boat.');
+      selfStunOnInvalidToggle('Face land and press K to dock and unequip the boat.');
       return;
     }
 
@@ -441,7 +451,7 @@ export function createGame() {
     updateHud('Isaac was caught! He dropped every pot.');
   }
 
-  function resolveGameOver() {
+  function resolveGameOver(reasonCopy = 'Law enforcement shut Isaac down. Start over from Level 1.') {
     state.gameRunning = false;
     audio.stopMusicLoop();
     audio.stopBgmSetRotation();
@@ -458,7 +468,7 @@ export function createGame() {
     loadLevel(state.currentLevel);
     openMenu({
       title: 'Game Over',
-      copy: 'Law enforcement shut Isaac down. Start over from Level 1.',
+      copy: reasonCopy,
       buttonText: 'Restart Run',
       showDifficulty: false,
     });
@@ -585,34 +595,46 @@ export function createGame() {
   }
 
   function trySell() {
+    if (state.pottery <= 0) {
+      updateHud('Pottery Left is 0. Isaac cannot sell anymore. Game over.');
+      resolveGameOver('Isaac ran out of pottery. Start over from Level 1.');
+      return;
+    }
+
+    state.pottery -= 1;
+
     const targetX = state.player.x + state.player.facing.x;
     const targetY = state.player.y + state.player.facing.y;
     const target = state.dudes.find((dude) => dude.x === targetX && dude.y === targetY);
 
     if (!target) {
-      updateHud('No dude in front of Isaac. Face a dude and press J.');
+      if (state.pottery <= 0) {
+        updateHud('No dude in front of Isaac. Pottery Left is 0. Game over.');
+        resolveGameOver('Isaac ran out of pottery. Start over from Level 1.');
+        return;
+      }
+      updateHud('No dude in front of Isaac. One pot was still used.');
       return;
     }
 
     if (target.bought) {
-      updateHud(`${target.name} already bought pottery today.`);
-      return;
-    }
-
-    if (state.pottery <= 0) {
-      updateHud('No pottery left. Isaac needs a restock.');
+      if (state.pottery <= 0) {
+        updateHud(`${target.name} already bought pottery today. Pottery Left is 0. Game over.`);
+        resolveGameOver('Isaac ran out of pottery. Start over from Level 1.');
+        return;
+      }
+      updateHud(`${target.name} already bought pottery today. One pot was still used.`);
       return;
     }
 
     target.bought = true;
-    state.pottery -= 1;
     state.sales += 1;
     state.telemetry.sales += 1;
     pushTelemetryEvent(`Sale to ${target.name} on level ${state.currentLevel}.`);
     audio.playSaleChaching();
 
     if (state.sales >= state.goal) {
-      updateHud(`${target.name} bought a pot. Goal complete for this map!`);
+      updateHud(`${target.name} bought a pot. Level ${state.currentLevel} complete!`);
       state.gameRunning = false;
       audio.stopMusicLoop();
       audio.stopBgmSetRotation();
@@ -620,8 +642,13 @@ export function createGame() {
         cancelAnimationFrame(state.animationFrameId);
         state.animationFrameId = null;
       }
-      updateHud(`${target.name} bought a pot. Level ${state.currentLevel} complete!`);
       completeLevel();
+      return;
+    }
+
+    if (state.pottery <= 0) {
+      updateHud(`${target.name} bought a pot, but Isaac has no pottery left. Game over.`);
+      resolveGameOver('Isaac ran out of pottery. Start over from Level 1.');
       return;
     }
 
