@@ -12,11 +12,7 @@ export function bindInput({ state, elements, actions }) {
     }
     if (key === 'F3' && !event.repeat) {
       event.preventDefault();
-      actions.toggleDebugOverlay();
-    }
-    if (key === 'h' && !event.repeat) {
-      event.preventDefault();
-      actions.toggleDebugHitboxes();
+      actions.toggleDebugTools();
     }
 
     if (!state.gameRunning) {

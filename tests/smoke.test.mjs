@@ -13,7 +13,6 @@ test('index wires canvas and module entry point', () => {
 
 test('index includes essential control and menu elements', () => {
   for (const id of [
-    'inventory',
     'sales',
     'level',
     'boatStatus',
@@ -25,8 +24,7 @@ test('index includes essential control and menu elements', () => {
     'toggleMusicBtn',
     'nextBgmBtn',
     'difficultySelect',
-    'debugStatus',
-    'telemetryStatus',
+    'leaderboardFastest',
   ]) {
     assert.match(index, new RegExp(`id="${id}"`));
   }
@@ -73,7 +71,8 @@ test('levels 4 and 5 include police spawns', () => {
 });
 
 
-test('index documents phase 4 debug controls', () => {
-  assert.match(index, /Debug Overlay: F3/);
-  assert.match(index, /Debug Hitboxes: H/);
+test('index documents movement and developer debug controls', () => {
+  assert.match(index, /Move: WASD/);
+  assert.doesNotMatch(index, /Arrow Keys/);
+  assert.match(index, /Developer Debug \(hidden tools\): F3/);
 });

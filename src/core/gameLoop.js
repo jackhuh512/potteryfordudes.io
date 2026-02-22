@@ -8,7 +8,6 @@ import { bindInput } from '../systems/input.js';
 export function createGame() {
   const elements = {
     canvas: document.getElementById('gameMap'),
-    inventoryEl: document.getElementById('inventory'),
     salesEl: document.getElementById('sales'),
     levelEl: document.getElementById('level'),
     boatStatusEl: document.getElementById('boatStatus'),
@@ -22,15 +21,29 @@ export function createGame() {
     nextBgmBtn: document.getElementById('nextBgmBtn'),
     difficultySelectEl: document.getElementById('difficultySelect'),
     difficultyPanelEl: document.getElementById('difficultyPanel'),
-    debugStatusEl: document.getElementById('debugStatus'),
-    telemetryStatusEl: document.getElementById('telemetryStatus'),
+    leaderboardFastestEl: document.getElementById('leaderboardFastest'),
   };
 
   const ctx = elements.canvas.getContext('2d');
   const mapWidth = elements.canvas.width / tileSize;
   const mapHeight = elements.canvas.height / tileSize;
   const state = createInitialState({ mapWidth, mapHeight });
+  const leaderboardStorageKey = 'potteryfordudes.fastestClearMs';
+  let runStartTimeMs = null;
 
+
+  function readFastestClearMs() {
+    const saved = Number.parseInt(window.localStorage.getItem(leaderboardStorageKey) || '', 10);
+    return Number.isFinite(saved) && saved > 0 ? saved : null;
+  }
+
+  function formatDuration(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    const milliseconds = ms % 1000;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+  }
 
   function parseDebugConfig() {
     const params = new URLSearchParams(window.location.search);
@@ -62,21 +75,17 @@ export function createGame() {
   }
 
   function updateHud(text) {
-    elements.inventoryEl.textContent = `Pottery left: ${state.pottery}`;
     elements.salesEl.textContent = `Sales made: ${state.sales} / ${state.goal}`;
     elements.levelEl.textContent = `Level: ${state.currentLevel} / ${maxLevel}`;
     elements.boatStatusEl.textContent = `Boat: ${
       state.hasBoat ? (state.boatEquipped ? 'Equipped' : 'Unequipped') : 'Not Owned'
     }`;
 
-    if (elements.debugStatusEl) {
-      const debugMode = state.debug.enabled ? 'ON' : 'OFF';
-      const hitboxes = state.debug.showHitboxes ? 'ON' : 'OFF';
-      elements.debugStatusEl.textContent = `Debug: ${debugMode} (F3) · Hitboxes: ${hitboxes} (H)`;
-    }
-
-    if (elements.telemetryStatusEl) {
-      elements.telemetryStatusEl.textContent = `Telemetry · Sales: ${state.telemetry.sales} · Steps: ${state.telemetry.steps} · Boat toggles: ${state.telemetry.boatToggles}`;
+    if (elements.leaderboardFastestEl) {
+      const fastestClearMs = readFastestClearMs();
+      elements.leaderboardFastestEl.textContent = fastestClearMs === null
+        ? 'Fastest Clear: --'
+        : `Fastest Clear: ${formatDuration(fastestClearMs)}`;
     }
 
     if (text) {
@@ -275,13 +284,13 @@ export function createGame() {
       return;
     }
 
-    if (state.keys.has('ArrowUp') || state.keys.has('w')) {
+    if (state.keys.has('w')) {
       move(0, -1);
-    } else if (state.keys.has('ArrowDown') || state.keys.has('s')) {
+    } else if (state.keys.has('s')) {
       move(0, 1);
-    } else if (state.keys.has('ArrowLeft') || state.keys.has('a')) {
+    } else if (state.keys.has('a')) {
       move(-1, 0);
-    } else if (state.keys.has('ArrowRight') || state.keys.has('d')) {
+    } else if (state.keys.has('d')) {
       move(1, 0);
     } else {
       return;
@@ -488,11 +497,25 @@ export function createGame() {
 
     if (state.currentLevel >= maxLevel) {
       state.awaitingReplay = true;
-      pushTelemetryEvent('Run complete. All levels cleared.');
+      const runDurationMs = runStartTimeMs === null ? null : Math.round(performance.now() - runStartTimeMs);
+      const previousFastestMs = readFastestClearMs();
+      const isNewRecord = runDurationMs !== null && (previousFastestMs === null || runDurationMs < previousFastestMs);
+      if (isNewRecord) {
+        window.localStorage.setItem(leaderboardStorageKey, String(runDurationMs));
+      }
+      if (runDurationMs !== null) {
+        const recordLabel = isNewRecord ? 'New record!' : 'Best clear remains.';
+        pushTelemetryEvent(`Run complete in ${formatDuration(runDurationMs)}. ${recordLabel}`);
+      } else {
+        pushTelemetryEvent('Run complete. All levels cleared.');
+      }
       audio.playCelebrationAnthem();
+      const completionMessage = runDurationMs === null
+        ? 'You cleared all 5 levels! Trumpets blast, drums thunder, and fireworks paint all of ClayTown.'
+        : `You cleared all 5 levels in ${formatDuration(runDurationMs)}. ${isNewRecord ? 'New fastest clear!' : 'Can you beat your best time?'}`;
       openMenu({
         title: 'Legend Complete!',
-        copy: 'You cleared all 5 levels! Trumpets blast, drums thunder, and fireworks paint all of ClayTown.',
+        copy: completionMessage,
         buttonText: 'Play Again',
         celebration: true,
         showDifficulty: false,
@@ -631,6 +654,7 @@ export function createGame() {
     audio.stopCelebrationMusic();
 
     loadLevel(state.currentLevel);
+    runStartTimeMs = performance.now();
     state.hasStartedGame = true;
     elements.startMenuEl.classList.add('hidden');
     if (!state.gameRunning) {
@@ -653,21 +677,11 @@ export function createGame() {
         trySell,
         toggleBoat,
         setDifficulty,
-        toggleDebugOverlay: () => {
+        toggleDebugTools: () => {
           state.debug.enabled = !state.debug.enabled;
           state.debug.showOverlay = state.debug.enabled;
-          if (!state.debug.enabled) {
-            state.debug.showHitboxes = false;
-          }
-          updateHud(`Debug mode ${state.debug.enabled ? 'enabled' : 'disabled'}.`);
-          renderer.render();
-        },
-        toggleDebugHitboxes: () => {
-          if (!state.debug.enabled) {
-            return;
-          }
-          state.debug.showHitboxes = !state.debug.showHitboxes;
-          updateHud(`Debug hitboxes ${state.debug.showHitboxes ? 'enabled' : 'disabled'}.`);
+          state.debug.showHitboxes = state.debug.enabled;
+          updateHud(`Developer debug tools ${state.debug.enabled ? 'enabled' : 'disabled'}.`);
           renderer.render();
         },
       },
