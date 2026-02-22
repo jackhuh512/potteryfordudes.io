@@ -218,10 +218,10 @@ export function createGame() {
   function toggleBoat() {
     state.telemetry.boatToggles += 1;
 
-    const selfStunDurationMs = 100;
+    const selfStunDurationMs = 250;
     const selfStunOnInvalidToggle = (message) => {
       state.player.moveCooldownMs = Math.max(state.player.moveCooldownMs, selfStunDurationMs);
-      updateHud(`${message} Isaac is stunned for 0.1s.`);
+      updateHud(`${message} Isaac is stunned for 0.25s.`);
     };
 
     if (!state.hasBoat) {
