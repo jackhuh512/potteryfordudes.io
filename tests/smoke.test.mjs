@@ -25,6 +25,8 @@ test('index includes essential control and menu elements', () => {
     'toggleMusicBtn',
     'nextBgmBtn',
     'difficultySelect',
+    'debugStatus',
+    'telemetryStatus',
   ]) {
     assert.match(index, new RegExp(`id="${id}"`));
   }
@@ -53,4 +55,10 @@ test('state transitions module owns level reset and difficulty transitions', () 
   assert.equal(state.dudes.length, levelConfigs[2].dudes.length);
   assert.equal(state.irsAgents.length, levelConfigs[2].irsSpawns.length);
   assert.equal(state.map[2][10], 'water');
+});
+
+
+test('index documents phase 4 debug controls', () => {
+  assert.match(index, /Debug Overlay: F3/);
+  assert.match(index, /Debug Hitboxes: H/);
 });

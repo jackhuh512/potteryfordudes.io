@@ -17,6 +17,8 @@ export const difficultyMultipliers = {
  * @returns {GameState}
  */
 export function createInitialState({ mapWidth, mapHeight }) {
+  const defaultSeed = 1337;
+
   return {
     mapWidth,
     mapHeight,
@@ -45,6 +47,26 @@ export function createInitialState({ mapWidth, mapHeight }) {
       facing: { x: 0, y: 1 },
       isDying: false,
       deathFrame: 0,
+    },
+    debug: {
+      enabled: false,
+      showOverlay: false,
+      showHitboxes: false,
+      deterministic: false,
+      seed: defaultSeed,
+      frameCount: 0,
+      fps: 0,
+      fpsAccumulatorMs: 0,
+      fpsSampleFrames: 0,
+    },
+    telemetry: {
+      sales: 0,
+      steps: 0,
+      boatToggles: 0,
+      levelStartTimeMs: 0,
+      levelDurationMs: 0,
+      reportCooldownMs: 10000,
+      events: [],
     },
   };
 }

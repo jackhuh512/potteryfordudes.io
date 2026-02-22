@@ -92,6 +92,51 @@ export function createRenderer({ canvas, ctx, tileSize, state }) {
     ctx.fillRect(potBaseX, potBaseY, 4, 8);
   }
 
+  function drawDebugHitboxes() {
+    if (!state.debug.showHitboxes) {
+      return;
+    }
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.lineWidth = 1;
+
+    ctx.strokeRect(state.player.x * tileSize + 6, state.player.y * tileSize + 4, 20, 24);
+    state.dudes.forEach((dude) => {
+      ctx.strokeRect(dude.x * tileSize + 6, dude.y * tileSize + 4, 20, 24);
+    });
+    state.irsAgents.forEach((agent) => {
+      ctx.strokeRect(agent.x * tileSize + 4, agent.y * tileSize + 4, 24, 24);
+    });
+  }
+
+  function drawDebugOverlay() {
+    if (!state.debug.showOverlay) {
+      return;
+    }
+
+    ctx.fillStyle = 'rgba(15, 21, 35, 0.78)';
+    ctx.fillRect(8, 8, 270, 98);
+    ctx.strokeStyle = 'rgba(124, 236, 166, 0.9)';
+    ctx.strokeRect(8, 8, 270, 98);
+
+    ctx.fillStyle = '#dbf7e8';
+    ctx.font = '12px Chakra Petch, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+
+    const lines = [
+      `FPS: ${state.debug.fps || '--'} | Frame: ${state.debug.frameCount}`,
+      `Player: (${state.player.x}, ${state.player.y}) | Facing: (${state.player.facing.x}, ${state.player.facing.y})`,
+      `Entities: dudes=${state.dudes.length}, irs=${state.irsAgents.length}`,
+      `Seed: ${state.debug.seed} | Deterministic: ${state.debug.deterministic ? 'yes' : 'no'}`,
+      `Telemetry: sales=${state.telemetry.sales}, steps=${state.telemetry.steps}`,
+    ];
+
+    lines.forEach((line, index) => {
+      ctx.fillText(line, 14, 14 + index * 16);
+    });
+  }
+
   function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let y = 0; y < state.mapHeight; y += 1) {
@@ -102,6 +147,8 @@ export function createRenderer({ canvas, ctx, tileSize, state }) {
     state.dudes.forEach(drawDude);
     state.irsAgents.forEach(drawIrsAgent);
     drawPlayer();
+    drawDebugHitboxes();
+    drawDebugOverlay();
   }
 
   return { render };

@@ -37,6 +37,8 @@ That inspired him to make ceramics with a different vibe: pottery that's less "c
 - **Toggle boat mode:** `B`
 - **Toggle music on/off:** `M`
 - **Switch to next BGM set:** `N`
+- **Toggle debug overlay:** `F3`
+- **Toggle debug hitboxes:** `H` (only when debug mode is on)
 
 ## Thank you
 
@@ -52,3 +54,12 @@ Run local guardrails before pushing:
 - `npm run format:check` — newline / line-ending checks
 - `npm test` — smoke tests for game wiring and loop hooks
 - `npm run check` — run all of the above
+
+
+## Phase 4 debug + telemetry tools
+
+- Launch with `?debug=1` to enable deterministic debug mode and overlay by default.
+- Optional URL params:
+  - `seed=<number>` sets the deterministic RNG seed used for IRS tie-break decisions.
+  - `hitboxes=1` enables hitboxes on load.
+- Lightweight telemetry now tracks total sales, steps, and boat toggles for balancing.

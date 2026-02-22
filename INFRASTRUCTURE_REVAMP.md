@@ -49,11 +49,14 @@ Split `script.js` into small modules:
 - Establish architecture boundaries between content, systems, and state transitions.
 
 ### Phase 4: Game-dev productivity tools
-- Add debug overlays (FPS, entity counts, optional hitboxes).
-- Add deterministic debug mode/seed for reproducible bug reports.
-- Add lightweight telemetry for balancing insights.
+- Add debug overlays (FPS, entity counts, optional hitboxes). ✅
+- Add deterministic debug mode/seed for reproducible bug reports. ✅
+- Add lightweight telemetry for balancing insights. ✅
 
 ## Immediate Action (implemented now)
 This repository now begins with **Phase 1**:
 - Tooling setup for linting/formatting/testing.
 - CI quality checks before deployment.
+
+## Phase 4 status
+Implemented in the current branch with runtime debug toggles (`F3`, `H`), URL-based deterministic seed configuration (`?debug=1&seed=...`), and lightweight telemetry surfaced in HUD + periodic debug logs.

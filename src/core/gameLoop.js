@@ -22,12 +22,44 @@ export function createGame() {
     nextBgmBtn: document.getElementById('nextBgmBtn'),
     difficultySelectEl: document.getElementById('difficultySelect'),
     difficultyPanelEl: document.getElementById('difficultyPanel'),
+    debugStatusEl: document.getElementById('debugStatus'),
+    telemetryStatusEl: document.getElementById('telemetryStatus'),
   };
 
   const ctx = elements.canvas.getContext('2d');
   const mapWidth = elements.canvas.width / tileSize;
   const mapHeight = elements.canvas.height / tileSize;
   const state = createInitialState({ mapWidth, mapHeight });
+
+
+  function parseDebugConfig() {
+    const params = new URLSearchParams(window.location.search);
+    const debugEnabled = params.get('debug') === '1';
+    const parsedSeed = Number.parseInt(params.get('seed') || '', 10);
+
+    state.debug.enabled = debugEnabled;
+    state.debug.showOverlay = debugEnabled;
+    state.debug.showHitboxes = debugEnabled && params.get('hitboxes') === '1';
+    state.debug.deterministic = debugEnabled;
+    state.debug.seed = Number.isNaN(parsedSeed) ? state.debug.seed : parsedSeed;
+  }
+
+  function seededRandom() {
+    if (!state.debug.deterministic) {
+      return Math.random();
+    }
+
+    const nextSeed = (1664525 * state.debug.seed + 1013904223) % 4294967296;
+    state.debug.seed = nextSeed;
+    return nextSeed / 4294967296;
+  }
+
+  function pushTelemetryEvent(eventText) {
+    state.telemetry.events.push(eventText);
+    if (state.telemetry.events.length > 6) {
+      state.telemetry.events.shift();
+    }
+  }
 
   function updateHud(text) {
     elements.inventoryEl.textContent = `Pottery left: ${state.pottery}`;
@@ -36,12 +68,23 @@ export function createGame() {
     elements.boatStatusEl.textContent = `Boat: ${
       state.hasBoat ? (state.boatEquipped ? 'Equipped' : 'Unequipped') : 'Not Owned'
     }`;
+
+    if (elements.debugStatusEl) {
+      const debugMode = state.debug.enabled ? 'ON' : 'OFF';
+      const hitboxes = state.debug.showHitboxes ? 'ON' : 'OFF';
+      elements.debugStatusEl.textContent = `Debug: ${debugMode} (F3) · Hitboxes: ${hitboxes} (H)`;
+    }
+
+    if (elements.telemetryStatusEl) {
+      elements.telemetryStatusEl.textContent = `Telemetry · Sales: ${state.telemetry.sales} · Steps: ${state.telemetry.steps} · Boat toggles: ${state.telemetry.boatToggles}`;
+    }
+
     if (text) {
       elements.messageEl.textContent = text;
     }
   }
 
-  const renderer = createRenderer({ canvas: elements.canvas, ctx, tileSize, state });
+  const renderer = createRenderer({ canvas: elements.canvas, ctx, tileSize, state, seededRandom });
   const audio = createAudioSystem({ state, updateHud });
 
   function getDifficultyMultiplier() {
@@ -75,6 +118,10 @@ export function createGame() {
   function loadLevel(level) {
     const config = levelConfigs[level];
     resetStateForLevel(state, config);
+    state.telemetry.levelStartTimeMs = performance.now();
+    state.telemetry.levelDurationMs = 0;
+    state.telemetry.reportCooldownMs = 10000;
+    pushTelemetryEvent(`Level ${level} start (difficulty: ${state.difficulty}).`);
     audio.resetTrackState();
     updateHud(`Level ${level}: Walk up to a dude and press E to sell pottery.`);
     renderer.render();
@@ -113,6 +160,8 @@ export function createGame() {
   }
 
   function toggleBoat() {
+    state.telemetry.boatToggles += 1;
+
     if (!state.hasBoat) {
       updateHud('Isaac does not have a boat yet.');
       return;
@@ -196,6 +245,7 @@ export function createGame() {
     if (walkable(nx, ny)) {
       state.player.x = nx;
       state.player.y = ny;
+      state.telemetry.steps += 1;
     } else if (nx >= 0 && ny >= 0 && nx < mapWidth && ny < mapHeight) {
       const destinationTile = state.map[ny][nx];
       if (!state.boatEquipped && destinationTile === 'water') {
@@ -242,9 +292,11 @@ export function createGame() {
   function moveIrsAgent(agent) {
     const dx = state.player.x - agent.x;
     const dy = state.player.y - agent.y;
-    const horizontalFirst = Math.abs(dx) >= Math.abs(dy);
+    const prioritizeHorizontal = Math.abs(dx) === Math.abs(dy)
+      ? seededRandom() >= 0.5
+      : Math.abs(dx) >= Math.abs(dy);
 
-    const options = horizontalFirst
+    const options = prioritizeHorizontal
       ? [
           { x: Math.sign(dx), y: 0 },
           { x: 0, y: Math.sign(dy) },
@@ -254,7 +306,14 @@ export function createGame() {
           { x: Math.sign(dx), y: 0 },
         ];
 
-    options.push({ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 });
+    const fallback = [
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: -1 },
+    ];
+    fallback.sort(() => seededRandom() - 0.5);
+    options.push(...fallback);
 
     for (const option of options) {
       if (option.x === 0 && option.y === 0) {
@@ -280,6 +339,7 @@ export function createGame() {
     state.player.deathFrame = 0;
     state.gameOverTimer = 60;
     state.keys.clear();
+    pushTelemetryEvent(`Isaac was caught on level ${state.currentLevel}.`);
     updateHud('The IRS caught Isaac! He dropped every pot.');
   }
 
@@ -339,6 +399,7 @@ export function createGame() {
 
     if (state.currentLevel >= maxLevel) {
       state.awaitingReplay = true;
+      pushTelemetryEvent('Run complete. All levels cleared.');
       audio.playCelebrationAnthem();
       openMenu({
         title: 'Legend Complete!',
@@ -350,6 +411,7 @@ export function createGame() {
       return;
     }
 
+    pushTelemetryEvent(`Level ${state.currentLevel} complete in ${Math.round(state.telemetry.levelDurationMs / 1000)}s.`);
     state.currentLevel += 1;
     state.awaitingReplay = false;
     audio.updateMusicButtons(elements.toggleMusicBtn);
@@ -386,6 +448,8 @@ export function createGame() {
     target.bought = true;
     state.pottery -= 1;
     state.sales += 1;
+    state.telemetry.sales += 1;
+    pushTelemetryEvent(`Sale to ${target.name} on level ${state.currentLevel}.`);
     audio.playSaleChaching();
 
     if (state.sales >= state.goal) {
@@ -418,6 +482,31 @@ export function createGame() {
 
     handleMovement(deltaMs);
     updateIrsAgents();
+
+    state.debug.frameCount += 1;
+    state.debug.fpsAccumulatorMs += deltaMs;
+    state.debug.fpsSampleFrames += 1;
+    if (state.debug.fpsAccumulatorMs >= 500) {
+      state.debug.fps = Math.round((state.debug.fpsSampleFrames * 1000) / state.debug.fpsAccumulatorMs);
+      state.debug.fpsAccumulatorMs = 0;
+      state.debug.fpsSampleFrames = 0;
+    }
+
+    state.telemetry.levelDurationMs = performance.now() - state.telemetry.levelStartTimeMs;
+    state.telemetry.reportCooldownMs -= deltaMs;
+    if (state.telemetry.reportCooldownMs <= 0) {
+      state.telemetry.reportCooldownMs = 10000;
+      if (state.debug.enabled) {
+        console.info('[telemetry]', {
+          level: state.currentLevel,
+          sales: state.telemetry.sales,
+          steps: state.telemetry.steps,
+          boatToggles: state.telemetry.boatToggles,
+          levelDurationMs: Math.round(state.telemetry.levelDurationMs),
+        });
+      }
+      updateHud();
+    }
 
     if (state.player.isDying) {
       state.player.deathFrame += 1;
@@ -475,8 +564,27 @@ export function createGame() {
         trySell,
         toggleBoat,
         setDifficulty,
+        toggleDebugOverlay: () => {
+          state.debug.enabled = !state.debug.enabled;
+          state.debug.showOverlay = state.debug.enabled;
+          if (!state.debug.enabled) {
+            state.debug.showHitboxes = false;
+          }
+          updateHud(`Debug mode ${state.debug.enabled ? 'enabled' : 'disabled'}.`);
+          renderer.render();
+        },
+        toggleDebugHitboxes: () => {
+          if (!state.debug.enabled) {
+            return;
+          }
+          state.debug.showHitboxes = !state.debug.showHitboxes;
+          updateHud(`Debug hitboxes ${state.debug.showHitboxes ? 'enabled' : 'disabled'}.`);
+          renderer.render();
+        },
       },
     });
+
+    parseDebugConfig();
 
     audio.updateMusicButtons(elements.toggleMusicBtn);
     if (elements.difficultySelectEl) {

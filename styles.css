@@ -243,6 +243,12 @@ h1 {
   margin: 0.45rem 0;
 }
 
+.hud .meta {
+  margin: 0.35rem 0;
+  font-size: 0.88rem;
+  color: #3f3b35;
+}
+
 #message {
   margin-top: 0.75rem;
   min-height: 3.2rem;

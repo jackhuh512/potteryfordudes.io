@@ -10,6 +10,14 @@ export function bindInput({ state, elements, actions }) {
       event.preventDefault();
       actions.advanceBgmSet();
     }
+    if (key === 'F3' && !event.repeat) {
+      event.preventDefault();
+      actions.toggleDebugOverlay();
+    }
+    if (key === 'h' && !event.repeat) {
+      event.preventDefault();
+      actions.toggleDebugHitboxes();
+    }
 
     if (!state.gameRunning) {
       if (key === 'Enter') {
