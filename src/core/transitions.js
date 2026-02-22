@@ -53,6 +53,7 @@ export function resetStateForLevel(state, config) {
     cooldownMs: 0,
   }));
   state.bullets = [];
+  state.flowers = [];
 
   state.keys.clear();
 }
