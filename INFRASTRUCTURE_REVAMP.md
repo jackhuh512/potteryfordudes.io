@@ -11,7 +11,8 @@ This document records expert feedback on the current repository infrastructure a
 
 ### Key issues
 - Game logic is in a single large `script.js` file, which increases maintenance and regression risk as features grow.
-- No robust external quality stack yet (linting/formatting/test framework packages are not currently installable in this environment).
+- No automated quality gates (linting, formatting, tests) to catch defects early.
+- No standard package scripts for consistent local and CI workflows.
 - Gameplay/content configuration is tightly coupled to runtime code.
 
 ## Verdict
@@ -51,3 +52,8 @@ Split `script.js` into small modules:
 - Add debug overlays (FPS, entity counts, optional hitboxes).
 - Add deterministic debug mode/seed for reproducible bug reports.
 - Add lightweight telemetry for balancing insights.
+
+## Immediate Action (implemented now)
+This repository now begins with **Phase 1**:
+- Tooling setup for linting/formatting/testing.
+- CI quality checks before deployment.
