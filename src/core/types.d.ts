@@ -25,6 +25,28 @@ export interface IrsAgentState extends Position {
   progress: number;
 }
 
+export interface DebugState {
+  enabled: boolean;
+  showOverlay: boolean;
+  showHitboxes: boolean;
+  deterministic: boolean;
+  seed: number;
+  frameCount: number;
+  fps: number;
+  fpsAccumulatorMs: number;
+  fpsSampleFrames: number;
+}
+
+export interface TelemetryState {
+  sales: number;
+  steps: number;
+  boatToggles: number;
+  levelStartTimeMs: number;
+  levelDurationMs: number;
+  reportCooldownMs: number;
+  events: string[];
+}
+
 export interface PlayerState extends Position {
   moveCooldownMs: number;
   facing: Position;
@@ -63,6 +85,8 @@ export interface GameState {
   irsAgents: IrsAgentState[];
   keys: Set<string>;
   player: PlayerState;
+  debug: DebugState;
+  telemetry: TelemetryState;
 }
 
 export interface MusicTrack {
