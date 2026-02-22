@@ -60,6 +60,13 @@ test('state transitions module owns level reset and difficulty transitions', () 
 });
 
 
+test('each level goal matches number of dudes to sell to', () => {
+  for (const config of Object.values(levelConfigs)) {
+    assert.equal(config.goal, config.dudes.length);
+  }
+});
+
+
 test('levels 4 and 5 include police spawns', () => {
   assert.equal(levelConfigs[4].policeSpawns.length, 1);
   assert.equal(levelConfigs[5].policeSpawns.length, 2);
