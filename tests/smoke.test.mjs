@@ -36,3 +36,21 @@ test('entry script bootstraps modular game loop', () => {
   assert.match(gameLoopModule, /function gameLoop\(/);
   assert.match(gameLoopModule, /requestAnimationFrame\(gameLoop\)/);
 });
+
+import { createInitialState } from '../src/core/state.js';
+import { resetStateForLevel, setDifficulty } from '../src/core/transitions.js';
+import { levelConfigs } from '../src/content/levels.js';
+
+test('state transitions module owns level reset and difficulty transitions', () => {
+  const state = createInitialState({ mapWidth: 20, mapHeight: 14 });
+
+  assert.equal(setDifficulty(state, 'medium'), true);
+  assert.equal(state.difficulty, 'medium');
+
+  resetStateForLevel(state, levelConfigs[2]);
+
+  assert.equal(state.goal, levelConfigs[2].goal);
+  assert.equal(state.dudes.length, levelConfigs[2].dudes.length);
+  assert.equal(state.irsAgents.length, levelConfigs[2].irsSpawns.length);
+  assert.equal(state.map[2][10], 'water');
+});

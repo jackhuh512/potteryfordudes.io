@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/core/types.d.ts",
+    "src/core/state.js",
+    "src/core/transitions.js",
+    "src/content/levels.js",
+    "src/content/musicProfile.js"
+  ]
+}
