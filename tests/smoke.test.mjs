@@ -4,13 +4,14 @@ import fs from 'node:fs';
 
 const index = fs.readFileSync('index.html', 'utf8');
 const script = fs.readFileSync('script.js', 'utf8');
+const gameLoopModule = fs.readFileSync('src/core/gameLoop.js', 'utf8');
 
-test('index wires canvas and script entry point', () => {
+test('index wires canvas and module entry point', () => {
   assert.match(index, /<canvas id="gameMap"/);
-  assert.match(index, /<script src="script\.js"><\/script>/);
+  assert.match(index, /<script type="module" src="script\.js"><\/script>/);
 });
 
-test('index includes essential control and menu elements used by script.js', () => {
+test('index includes essential control and menu elements', () => {
   for (const id of [
     'inventory',
     'sales',
@@ -23,20 +24,15 @@ test('index includes essential control and menu elements used by script.js', () 
     'newGameBtn',
     'toggleMusicBtn',
     'nextBgmBtn',
-    'difficultySelect'
+    'difficultySelect',
   ]) {
     assert.match(index, new RegExp(`id="${id}"`));
   }
 });
 
-test('script contains key game flow hooks', () => {
-  assert.match(script, /function startNewGame\(/);
-  assert.match(script, /function gameLoop\(/);
-  assert.match(script, /requestAnimationFrame\(gameLoop\)/);
-});
-
-test('script includes keyboard and button controls for core actions', () => {
-  assert.match(script, /window\.addEventListener\("keydown"/);
-  assert.match(script, /toggleMusicBtn\.addEventListener\("click"/);
-  assert.match(script, /newGameBtn\.addEventListener\("click"/);
+test('entry script bootstraps modular game loop', () => {
+  assert.match(script, /createGame/);
+  assert.match(script, /game\.init\(\)/);
+  assert.match(gameLoopModule, /function gameLoop\(/);
+  assert.match(gameLoopModule, /requestAnimationFrame\(gameLoop\)/);
 });

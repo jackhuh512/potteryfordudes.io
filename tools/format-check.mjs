@@ -1,6 +1,19 @@
 import fs from 'node:fs';
 
-const files = ['index.html', 'styles.css', 'script.js', 'README.md', 'INFRASTRUCTURE_REVAMP.md'];
+const files = [
+  'index.html',
+  'styles.css',
+  'script.js',
+  'README.md',
+  'INFRASTRUCTURE_REVAMP.md',
+  'src/core/gameLoop.js',
+  'src/core/state.js',
+  'src/systems/input.js',
+  'src/systems/render.js',
+  'src/systems/audio.js',
+  'src/content/levels.js',
+  'src/content/musicProfile.js',
+];
 let failed = false;
 
 for (const file of files) {

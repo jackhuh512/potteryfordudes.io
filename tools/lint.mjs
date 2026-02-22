@@ -1,6 +1,19 @@
 import fs from 'node:fs';
 
-const targets = ['index.html', 'styles.css', 'script.js', 'README.md', 'INFRASTRUCTURE_REVAMP.md'];
+const targets = [
+  'index.html',
+  'styles.css',
+  'script.js',
+  'README.md',
+  'INFRASTRUCTURE_REVAMP.md',
+  'src/core/gameLoop.js',
+  'src/core/state.js',
+  'src/systems/input.js',
+  'src/systems/render.js',
+  'src/systems/audio.js',
+  'src/content/levels.js',
+  'src/content/musicProfile.js',
+];
 let failed = false;
 
 for (const file of targets) {
@@ -27,8 +40,8 @@ for (const file of targets) {
 }
 
 const scriptContent = fs.readFileSync('script.js', 'utf8');
-if (!scriptContent.includes('requestAnimationFrame(gameLoop)')) {
-  console.error('script.js: expected requestAnimationFrame(gameLoop) call not found.');
+if (!scriptContent.includes('createGame')) {
+  console.error('script.js: expected modular createGame bootstrap not found.');
   failed = true;
 }
 
