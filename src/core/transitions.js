@@ -27,7 +27,7 @@ export function setDifficulty(state, nextDifficulty) {
  */
 export function resetStateForLevel(state, config) {
   state.goal = config.goal;
-  state.pottery = state.goal + 5;
+  state.pottery = getStartingPottery(config.dudes.length, state.difficulty);
   state.sales = 0;
   state.boatEquipped = false;
   state.player.x = 3;
@@ -56,6 +56,23 @@ export function resetStateForLevel(state, config) {
   state.flowers = [];
 
   state.keys.clear();
+}
+
+/**
+ * @param {number} dudesCount
+ * @param {Difficulty} difficulty
+ * @returns {number}
+ */
+export function getStartingPottery(dudesCount, difficulty) {
+  if (difficulty === 'easy') {
+    return dudesCount * 3;
+  }
+
+  if (difficulty === 'medium') {
+    return dudesCount * 2;
+  }
+
+  return dudesCount + 1;
 }
 
 /**
