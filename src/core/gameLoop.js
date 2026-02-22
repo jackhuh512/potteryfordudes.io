@@ -123,7 +123,7 @@ export function createGame() {
     state.telemetry.reportCooldownMs = 10000;
     pushTelemetryEvent(`Level ${level} start (difficulty: ${state.difficulty}).`);
     audio.resetTrackState();
-    updateHud(`Level ${level}: Walk up to a dude and press E to sell pottery.`);
+    updateHud(`Level ${level}: Walk up to a dude and press J to sell pottery.`);
     renderer.render();
   }
 
@@ -202,7 +202,7 @@ export function createGame() {
       }
 
       if (targetTile !== 'water') {
-        updateHud('Face water and press B to board the boat.');
+        updateHud('Face water and press K to board the boat.');
         return;
       }
       state.boatEquipped = true;
@@ -216,7 +216,7 @@ export function createGame() {
     }
 
     if (targetTile === 'water') {
-      updateHud('Face land and press B to dock and unequip the boat.');
+      updateHud('Face land and press K to dock and unequip the boat.');
       return;
     }
 
@@ -251,7 +251,7 @@ export function createGame() {
       if (!state.boatEquipped && destinationTile === 'water') {
         updateHud('Uh-oh! The water is too deep. Equip you boat or you will be fish food!');
       } else if (state.boatEquipped && destinationTile !== 'water' && destinationTile !== 'wall') {
-        updateHud("Uh-oh! The boat can't move onto land. Press B to dock before stepping ashore.");
+        updateHud("Uh-oh! The boat can't move onto land. Press K to dock before stepping ashore.");
       }
     }
   }
@@ -431,7 +431,7 @@ export function createGame() {
     const target = state.dudes.find((dude) => dude.x === targetX && dude.y === targetY);
 
     if (!target) {
-      updateHud('No dude in front of Isaac. Face a dude and press E.');
+      updateHud('No dude in front of Isaac. Face a dude and press J.');
       return;
     }
 

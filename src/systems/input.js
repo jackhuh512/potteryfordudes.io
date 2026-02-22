@@ -32,11 +32,11 @@ export function bindInput({ state, elements, actions }) {
     }
 
     state.keys.add(key);
-    if (key === 'e') {
+    if (key === 'j') {
       event.preventDefault();
       actions.trySell();
     }
-    if (key === 'b' && !event.repeat) {
+    if (key === 'k' && !event.repeat) {
       event.preventDefault();
       actions.toggleBoat();
     }
