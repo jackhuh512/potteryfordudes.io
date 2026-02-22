@@ -20,7 +20,7 @@ export const levelConfigs = {
     ],
   },
   2: {
-    goal: 5,
+    goal: 6,
     waterRects: [
       { x1: 10, x2: 14, y1: 2, y2: 7 },
       { x1: 15, x2: 18, y1: 8, y2: 12 },
@@ -40,7 +40,7 @@ export const levelConfigs = {
     ],
   },
   3: {
-    goal: 6,
+    goal: 7,
     waterRects: [
       { x1: 9, x2: 14, y1: 2, y2: 7 },
       { x1: 13, x2: 18, y1: 8, y2: 12 },
@@ -62,7 +62,7 @@ export const levelConfigs = {
     ],
   },
   4: {
-    goal: 7,
+    goal: 8,
     waterRects: [
       { x1: 8, x2: 15, y1: 2, y2: 8 },
       { x1: 12, x2: 18, y1: 9, y2: 12 },
@@ -90,7 +90,7 @@ export const levelConfigs = {
     ],
   },
   5: {
-    goal: 8,
+    goal: 9,
     waterRects: [
       { x1: 7, x2: 15, y1: 2, y2: 8 },
       { x1: 11, x2: 18, y1: 9, y2: 12 },
