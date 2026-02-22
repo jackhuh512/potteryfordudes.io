@@ -11,6 +11,7 @@ export function createGame() {
     salesEl: document.getElementById('sales'),
     levelEl: document.getElementById('level'),
     boatStatusEl: document.getElementById('boatStatus'),
+    flowersSmashedEl: document.getElementById('flowersSmashed'),
     messageEl: document.getElementById('message'),
     startMenuEl: document.getElementById('startMenu'),
     menuTitleEl: document.getElementById('menuTitle'),
@@ -80,6 +81,9 @@ export function createGame() {
     elements.boatStatusEl.textContent = `Boat: ${
       state.hasBoat ? (state.boatEquipped ? 'Equipped' : 'Unequipped') : 'Not Owned'
     }`;
+    if (elements.flowersSmashedEl) {
+      elements.flowersSmashedEl.textContent = `Flowers Smashed: ${state.flowersSmashed}`;
+    }
 
     if (elements.leaderboardFastestEl) {
       const fastestClearMs = readFastestClearMs();
@@ -133,9 +137,39 @@ export function createGame() {
     return getPoliceSpeedRatio(level) * 1.2;
   }
 
+  function isLandTile(x, y) {
+    const tile = state.map[y][x];
+    return tile === 'grass' || tile === 'path';
+  }
+
+  function placeFlowers() {
+    const flowerCount = 3 + Math.floor(seededRandom() * 6);
+    const candidates = [];
+
+    for (let y = 1; y < mapHeight - 1; y += 1) {
+      for (let x = 1; x < mapWidth - 1; x += 1) {
+        if (!isLandTile(x, y)) {
+          continue;
+        }
+        if (x === state.player.x && y === state.player.y) {
+          continue;
+        }
+        candidates.push({ x, y });
+      }
+    }
+
+    for (let i = candidates.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(seededRandom() * (i + 1));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+
+    state.flowers = candidates.slice(0, flowerCount).map(({ x, y }) => ({ x, y, smashed: false }));
+  }
+
   function loadLevel(level) {
     const config = levelConfigs[level];
     resetStateForLevel(state, config);
+    placeFlowers();
     state.telemetry.levelStartTimeMs = performance.now();
     state.telemetry.levelDurationMs = 0;
     state.telemetry.reportCooldownMs = 10000;
@@ -247,6 +281,18 @@ export function createGame() {
     }
   }
 
+  function smashFlowerAtPlayerPosition() {
+    const flower = state.flowers.find((candidate) =>
+      !candidate.smashed && candidate.x === state.player.x && candidate.y === state.player.y);
+
+    if (!flower) {
+      return;
+    }
+
+    flower.smashed = true;
+    state.flowersSmashed += 1;
+  }
+
   function move(dx, dy) {
     state.player.facing = { x: dx, y: dy };
     const nx = state.player.x + dx;
@@ -264,6 +310,7 @@ export function createGame() {
       state.player.x = nx;
       state.player.y = ny;
       state.telemetry.steps += 1;
+      smashFlowerAtPlayerPosition();
     } else if (nx >= 0 && ny >= 0 && nx < mapWidth && ny < mapHeight) {
       const destinationTile = state.map[ny][nx];
       if (!state.boatEquipped && destinationTile === 'water') {
@@ -652,6 +699,10 @@ export function createGame() {
     audio.stopBgmSetRotation();
     audio.stopGameOverMusic();
     audio.stopCelebrationMusic();
+
+    if (state.currentLevel === 1) {
+      state.flowersSmashed = 0;
+    }
 
     loadLevel(state.currentLevel);
     runStartTimeMs = performance.now();

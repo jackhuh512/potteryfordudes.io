@@ -35,6 +35,10 @@ export interface BulletState extends Position {
   progress: number;
 }
 
+export interface FlowerState extends Position {
+  smashed: boolean;
+}
+
 export interface DebugState {
   enabled: boolean;
   showOverlay: boolean;
@@ -96,6 +100,8 @@ export interface GameState {
   irsAgents: IrsAgentState[];
   policeAgents: PoliceState[];
   bullets: BulletState[];
+  flowers: FlowerState[];
+  flowersSmashed: number;
   keys: Set<string>;
   player: PlayerState;
   debug: DebugState;

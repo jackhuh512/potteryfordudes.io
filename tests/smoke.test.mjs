@@ -16,6 +16,7 @@ test('index includes essential control and menu elements', () => {
     'sales',
     'level',
     'boatStatus',
+    'flowersSmashed',
     'message',
     'startMenu',
     'menuTitle',
@@ -54,6 +55,8 @@ test('state transitions module owns level reset and difficulty transitions', () 
   assert.equal(state.irsAgents.length, levelConfigs[2].irsSpawns.length);
   assert.equal(state.policeAgents.length, 0);
   assert.equal(state.bullets.length, 0);
+  assert.equal(state.flowers.length, 0);
+  assert.equal(state.flowersSmashed, 0);
   assert.equal(state.map[2][10], 'water');
 });
 

@@ -28,6 +28,26 @@ export function createRenderer({ canvas, ctx, tileSize, state }) {
     }
   }
 
+  function drawFlower(flower) {
+    const px = flower.x * tileSize;
+    const py = flower.y * tileSize;
+
+    if (flower.smashed) {
+      ctx.fillStyle = '#8b5a7c';
+      ctx.fillRect(px + 10, py + 20, 12, 4);
+      ctx.fillStyle = '#567c3a';
+      ctx.fillRect(px + 15, py + 14, 2, 10);
+      return;
+    }
+
+    ctx.fillStyle = '#567c3a';
+    ctx.fillRect(px + 15, py + 12, 2, 12);
+    ctx.fillStyle = '#ff7fb0';
+    ctx.fillRect(px + 11, py + 8, 10, 8);
+    ctx.fillStyle = '#ffd56b';
+    ctx.fillRect(px + 14, py + 10, 4, 4);
+  }
+
   function drawIrsAgent(agent) {
     const px = agent.x * tileSize;
     const py = agent.y * tileSize;
@@ -169,6 +189,7 @@ export function createRenderer({ canvas, ctx, tileSize, state }) {
         drawTile(x, y, state.map[y][x]);
       }
     }
+    state.flowers.forEach(drawFlower);
     state.dudes.forEach(drawDude);
     state.irsAgents.forEach(drawIrsAgent);
     state.policeAgents.forEach(drawPoliceAgent);
