@@ -39,6 +39,25 @@ export function createRenderer({ canvas, ctx, tileSize, state }) {
     ctx.fillText('IRS', px + 16, py + 20);
   }
 
+
+  function drawPoliceAgent(agent) {
+    const px = agent.x * tileSize;
+    const py = agent.y * tileSize;
+    ctx.fillStyle = '#9ab0d9'; ctx.fillRect(px + 8, py + 4, 16, 10);
+    ctx.fillStyle = '#274472'; ctx.fillRect(px + 6, py + 14, 20, 13);
+    ctx.fillStyle = '#1f3559'; ctx.fillRect(px + 4, py + 16, 4, 8);
+    ctx.fillStyle = '#f4f8ff'; ctx.font = 'bold 7px Chakra Petch, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('PD', px + 16, py + 20);
+  }
+
+  function drawBullet(bullet) {
+    const px = bullet.x * tileSize;
+    const py = bullet.y * tileSize;
+    ctx.fillStyle = '#f6d55c';
+    ctx.fillRect(px + 12, py + 12, 8, 8);
+  }
+
   function drawDude(dude) {
     const px = dude.x * tileSize;
     const py = dude.y * tileSize;
@@ -107,6 +126,12 @@ export function createRenderer({ canvas, ctx, tileSize, state }) {
     state.irsAgents.forEach((agent) => {
       ctx.strokeRect(agent.x * tileSize + 4, agent.y * tileSize + 4, 24, 24);
     });
+    state.policeAgents.forEach((agent) => {
+      ctx.strokeRect(agent.x * tileSize + 4, agent.y * tileSize + 4, 24, 24);
+    });
+    state.bullets.forEach((bullet) => {
+      ctx.strokeRect(bullet.x * tileSize + 12, bullet.y * tileSize + 12, 8, 8);
+    });
   }
 
   function drawDebugOverlay() {
@@ -127,7 +152,7 @@ export function createRenderer({ canvas, ctx, tileSize, state }) {
     const lines = [
       `FPS: ${state.debug.fps || '--'} | Frame: ${state.debug.frameCount}`,
       `Player: (${state.player.x}, ${state.player.y}) | Facing: (${state.player.facing.x}, ${state.player.facing.y})`,
-      `Entities: dudes=${state.dudes.length}, irs=${state.irsAgents.length}`,
+      `Entities: dudes=${state.dudes.length}, irs=${state.irsAgents.length}, police=${state.policeAgents.length}, bullets=${state.bullets.length}`,
       `Seed: ${state.debug.seed} | Deterministic: ${state.debug.deterministic ? 'yes' : 'no'}`,
       `Telemetry: sales=${state.telemetry.sales}, steps=${state.telemetry.steps}`,
     ];
@@ -146,6 +171,8 @@ export function createRenderer({ canvas, ctx, tileSize, state }) {
     }
     state.dudes.forEach(drawDude);
     state.irsAgents.forEach(drawIrsAgent);
+    state.policeAgents.forEach(drawPoliceAgent);
+    state.bullets.forEach(drawBullet);
     drawPlayer();
     drawDebugHitboxes();
     drawDebugOverlay();

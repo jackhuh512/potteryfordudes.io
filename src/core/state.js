@@ -39,6 +39,8 @@ export function createInitialState({ mapWidth, mapHeight }) {
     map: [],
     dudes: [],
     irsAgents: [],
+    policeAgents: [],
+    bullets: [],
     keys: new Set(),
     player: {
       x: 3,

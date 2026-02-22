@@ -54,7 +54,15 @@ test('state transitions module owns level reset and difficulty transitions', () 
   assert.equal(state.goal, levelConfigs[2].goal);
   assert.equal(state.dudes.length, levelConfigs[2].dudes.length);
   assert.equal(state.irsAgents.length, levelConfigs[2].irsSpawns.length);
+  assert.equal(state.policeAgents.length, 0);
+  assert.equal(state.bullets.length, 0);
   assert.equal(state.map[2][10], 'water');
+});
+
+
+test('levels 4 and 5 include police spawns', () => {
+  assert.equal(levelConfigs[4].policeSpawns.length, 1);
+  assert.equal(levelConfigs[5].policeSpawns.length, 2);
 });
 
 
