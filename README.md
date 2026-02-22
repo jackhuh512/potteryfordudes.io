@@ -27,14 +27,14 @@ That inspired him to make ceramics with a different vibe: pottery that's less "c
 1. Open `index.html` in your browser.
 2. In the start menu, choose a difficulty.
 3. Click **New Game**.
-4. Walk up to dudes and press **E** to sell pottery.
+4. Walk up to dudes and press **J** to sell pottery.
 5. Hit each level's sales target to advance through all 5 levels.
 
 ## Controls
 
 - **Move:** `W`, `A`, `S`, `D` or Arrow Keys
-- **Interact / Sell pottery:** `E`
-- **Toggle boat mode:** `B`
+- **Sell pottery:** `J`
+- **Ride boat:** `K`
 - **Toggle music on/off:** `M`
 - **Switch to next BGM set:** `N`
 - **Toggle debug overlay:** `F3`
