@@ -100,7 +100,7 @@ export function createGame() {
       elements.difficultySelectEl.value = nextDifficulty;
     }
 
-    updateHud(`Difficulty set to ${state.difficulty}. IRS speed adjusted.`);
+    updateHud(`Difficulty set to ${state.difficulty}. Enemy speed adjusted.`);
   }
 
   function getIrsSpeedRatio(level) {
@@ -114,6 +114,15 @@ export function createGame() {
     return minRatio + (maxRatio - minRatio) * t;
   }
 
+
+
+  function getPoliceSpeedRatio(level) {
+    return getIrsSpeedRatio(level) * 1.2;
+  }
+
+  function getBulletSpeedRatio(level) {
+    return getPoliceSpeedRatio(level) * 1.2;
+  }
 
   function loadLevel(level) {
     const config = levelConfigs[level];
@@ -330,6 +339,39 @@ export function createGame() {
     }
   }
 
+
+  function movePoliceAgent(agent) {
+    moveIrsAgent(agent);
+  }
+
+  function firePoliceBullet(agent) {
+    const sameColumn = state.player.x === agent.x;
+    const sameRow = state.player.y === agent.y;
+
+    if (!sameColumn && !sameRow) {
+      return;
+    }
+
+    const direction = sameColumn
+      ? { x: 0, y: Math.sign(state.player.y - agent.y) }
+      : { x: Math.sign(state.player.x - agent.x), y: 0 };
+
+    if (direction.x === 0 && direction.y === 0) {
+      return;
+    }
+
+    state.bullets.push({
+      x: agent.x,
+      y: agent.y,
+      direction,
+      progress: 0,
+    });
+  }
+
+  function isPerimeterTile(x, y) {
+    return x <= 0 || y <= 0 || x >= mapWidth - 1 || y >= mapHeight - 1;
+  }
+
   function triggerIsaacDeath() {
     if (state.player.isDying) {
       return;
@@ -340,7 +382,7 @@ export function createGame() {
     state.gameOverTimer = 60;
     state.keys.clear();
     pushTelemetryEvent(`Isaac was caught on level ${state.currentLevel}.`);
-    updateHud('The IRS caught Isaac! He dropped every pot.');
+    updateHud('Isaac was caught! He dropped every pot.');
   }
 
   function resolveGameOver() {
@@ -360,23 +402,24 @@ export function createGame() {
     loadLevel(state.currentLevel);
     openMenu({
       title: 'Game Over',
-      copy: 'The IRS shut Isaac down. Start over from Level 1.',
+      copy: 'Law enforcement shut Isaac down. Start over from Level 1.',
       buttonText: 'Restart Run',
       showDifficulty: false,
     });
     audio.playGameOverViolin();
   }
 
-  function updateIrsAgents() {
+  function updateEnemies(deltaMs) {
     if (state.currentLevel < 2 || state.player.isDying || state.sales < 1) {
       return;
     }
 
-    const baseRatio = getIrsSpeedRatio(state.currentLevel);
+    const difficultyMultiplier = getDifficultyMultiplier();
+    const irsBaseRatio = getIrsSpeedRatio(state.currentLevel);
 
     state.irsAgents.forEach((agent) => {
       const tilePenalty = state.map[agent.y][agent.x] === 'water' ? 0.75 : 1;
-      agent.progress += (baseRatio * getDifficultyMultiplier() * tilePenalty) / 6;
+      agent.progress += (irsBaseRatio * difficultyMultiplier * tilePenalty) / 6;
 
       while (agent.progress >= 1) {
         moveIrsAgent(agent);
@@ -387,6 +430,52 @@ export function createGame() {
         triggerIsaacDeath();
       }
     });
+
+    const policeBaseRatio = getPoliceSpeedRatio(state.currentLevel);
+    state.policeAgents.forEach((agent) => {
+      const tilePenalty = state.map[agent.y][agent.x] === 'water' ? 0.75 : 1;
+      agent.progress += (policeBaseRatio * difficultyMultiplier * tilePenalty) / 6;
+      agent.cooldownMs = Math.max(0, agent.cooldownMs - deltaMs);
+
+      while (agent.progress >= 1) {
+        movePoliceAgent(agent);
+        agent.progress -= 1;
+      }
+
+      if (agent.cooldownMs <= 0) {
+        firePoliceBullet(agent);
+        agent.cooldownMs = 700;
+      }
+
+      if (agent.x === state.player.x && agent.y === state.player.y) {
+        triggerIsaacDeath();
+      }
+    });
+
+    const bulletBaseRatio = getBulletSpeedRatio(state.currentLevel);
+    const liveBullets = [];
+
+    state.bullets.forEach((bullet) => {
+      bullet.progress += (bulletBaseRatio * difficultyMultiplier) / 6;
+
+      while (bullet.progress >= 1) {
+        bullet.x += bullet.direction.x;
+        bullet.y += bullet.direction.y;
+        bullet.progress -= 1;
+
+        if (bullet.x === state.player.x && bullet.y === state.player.y) {
+          triggerIsaacDeath();
+        }
+
+        if (isPerimeterTile(bullet.x, bullet.y)) {
+          return;
+        }
+      }
+
+      liveBullets.push(bullet);
+    });
+
+    state.bullets = liveBullets;
   }
 
   function completeLevel() {
@@ -481,7 +570,7 @@ export function createGame() {
     state.lastFrameTimeMs = timestamp;
 
     handleMovement(deltaMs);
-    updateIrsAgents();
+    updateEnemies(deltaMs);
 
     state.debug.frameCount += 1;
     state.debug.fpsAccumulatorMs += deltaMs;

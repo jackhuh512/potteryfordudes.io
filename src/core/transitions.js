@@ -47,6 +47,12 @@ export function resetStateForLevel(state, config) {
     ...spawn,
     progress: 0,
   }));
+  state.policeAgents = (config.policeSpawns || []).map((/** @type {NonNullable<LevelConfig['policeSpawns']>[number]} */ spawn) => ({
+    ...spawn,
+    progress: 0,
+    cooldownMs: 0,
+  }));
+  state.bullets = [];
 
   state.keys.clear();
 }

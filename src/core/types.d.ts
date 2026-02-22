@@ -25,6 +25,16 @@ export interface IrsAgentState extends Position {
   progress: number;
 }
 
+export interface PoliceState extends Position {
+  progress: number;
+  cooldownMs: number;
+}
+
+export interface BulletState extends Position {
+  direction: Position;
+  progress: number;
+}
+
 export interface DebugState {
   enabled: boolean;
   showOverlay: boolean;
@@ -59,6 +69,7 @@ export interface LevelConfig {
   waterRects: WaterRect[];
   dudes: DudeSpawn[];
   irsSpawns?: Position[];
+  policeSpawns?: Position[];
 }
 
 export type LevelConfigMap = Record<number, LevelConfig>;
@@ -83,6 +94,8 @@ export interface GameState {
   map: TileType[][];
   dudes: DudeState[];
   irsAgents: IrsAgentState[];
+  policeAgents: PoliceState[];
+  bullets: BulletState[];
   keys: Set<string>;
   player: PlayerState;
   debug: DebugState;

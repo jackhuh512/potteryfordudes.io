@@ -85,6 +85,9 @@ export const levelConfigs = {
       { x: 10, y: 2 },
       { x: 2, y: 12 },
     ],
+    policeSpawns: [
+      { x: 17, y: 2 },
+    ],
   },
   5: {
     goal: 8,
@@ -112,6 +115,10 @@ export const levelConfigs = {
       { x: 10, y: 2 },
       { x: 2, y: 12 },
       { x: 16, y: 2 },
+    ],
+    policeSpawns: [
+      { x: 3, y: 2 },
+      { x: 17, y: 12 },
     ],
   },
 };
